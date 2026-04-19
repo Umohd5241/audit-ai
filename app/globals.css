@@ -22,23 +22,48 @@
     box-shadow: 0 0 0 4px rgba(99,102,241,0.2);
   }
 
-  /* Accessibility: High Contrast Mode */
+  /* Accessibility: Optimized High Contrast Mode (Premium 3.0) */
   body[data-theme="high-contrast"] {
     background: #000000 !important;
     color: #FFFFFF !important;
   }
   body[data-theme="high-contrast"] * {
     border-color: #FFFFFF !important;
+    background-color: transparent !important;
+    color: #FFFFFF !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+  body[data-theme="high-contrast"] .bg-indigo-500,
+  body[data-theme="high-contrast"] button[type="submit"],
+  body[data-theme="high-contrast"] .bg-indigo-600 {
+    background-color: #FFFF00 !important; /* Stark Yellow for Primary Actions */
+    color: #000000 !important;
+    border: 2px solid #FFFFFF !important;
+    font-weight: 900 !important;
   }
   body[data-theme="high-contrast"] .glass-card {
     background: #000000 !important;
     border: 2px solid #FFFFFF !important;
+    border-radius: 0px !important; /* Sharp corners for accessibility */
   }
-  body[data-theme="high-contrast"] p,
-  body[data-theme="high-contrast"] span:not(.font-bold),
-  body[data-theme="high-contrast"] div:not(.bg-indigo-500) {
+  body[data-theme="high-contrast"] input,
+  body[data-theme="high-contrast"] textarea {
+    background: #000000 !important;
+    border: 2px solid #FFFF00 !important;
     color: #FFFFFF !important;
   }
+  body[data-theme="high-contrast"] a:hover,
+  body[data-theme="high-contrast"] button:hover {
+    background-color: #FFFFFF !important;
+    color: #000000 !important;
+  }
+  body[data-theme="high-contrast"] .text-indigo-500,
+  body[data-theme="high-contrast"] .text-indigo-600 {
+    color: #FFFF00 !important;
+    text-decoration: underline !important;
+  }
+
 }
 
 @layer utilities {

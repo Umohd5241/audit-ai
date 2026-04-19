@@ -39,17 +39,19 @@ export default async function SettingsPage() {
             </div>
             <h2 className="text-[15px] font-semibold text-[#1E293B]">Profile</h2>
           </div>
-          <div className="space-y-0">
+          <div className="space-y-0 text-left">
             {[
+              { icon: User, label: 'Name', value: user?.displayName || 'Not Set' },
               { icon: Mail, label: 'Email', value: user?.email || '—' },
-              { icon: Key, label: 'User ID', value: session.userId.slice(0, 20) + '...' },
+              { icon: MessageSquare, label: 'Telegram', value: user?.telegramHandle ? `@${user.telegramHandle}` : 'Not Linked' },
+              { icon: Key, label: 'User ID', value: session.userId.slice(0, 15) + '...' },
             ].map((item, i) => (
-              <div key={i} className={`flex items-center justify-between py-3.5 ${i < 1 ? 'border-b border-[rgba(0,0,0,0.04)]' : ''}`}>
-                <div className="flex items-center gap-3">
+              <div key={i} className={`flex items-center justify-between py-3.5 ${i < 3 ? 'border-b border-[rgba(0,0,0,0.04)]' : ''}`}>
+                <div className="flex items-center gap-3 text-left">
                   <item.icon className="w-4 h-4 text-[#B0B8C4]" />
                   <span className="text-[13px] text-[#64748B]">{item.label}</span>
                 </div>
-                <span className={`text-[13px] font-medium ${item.label === 'User ID' ? 'font-mono text-[#94A3B8] text-[11px]' : 'text-[#1E293B]'}`}>
+                <span className={`text-[13px] font-medium text-right ${item.label === 'User ID' ? 'font-mono text-[#94A3B8] text-[11px]' : 'text-[#1E293B]'}`}>
                   {item.value}
                 </span>
               </div>
