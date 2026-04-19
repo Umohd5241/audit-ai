@@ -29,8 +29,11 @@ export default function SettingsManager({
     }
   }, [highContrast]);
 
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
+
   const saveSettings = async (updates: any) => {
     setSaving(true);
+    setSaveStatus('idle');
     try {
       const res = await fetch('/api/user/settings', {
         method: 'POST',
@@ -41,11 +44,20 @@ export default function SettingsManager({
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || 'Failed to save settings');
       }
-      // CRITICAL: Refresh the server components (Sidebar etc)
+      
+      setSaveStatus('success');
+      // Force a re-fetch of server data
       router.refresh();
+      
+      // Secondary fallback to ensure sidebar/layout see the update
+      setTimeout(() => {
+        setSaveStatus('idle');
+      }, 3000);
+      
       return true;
     } catch (err: any) {
       console.error(err);
+      setSaveStatus('error');
       alert(err.message || 'Settings cannot be permanently saved due to Database Quota Exhaustion. They will revert on refresh.');
       return false;
     } finally {
@@ -62,8 +74,13 @@ export default function SettingsManager({
       telegramHandle 
     });
     setSavingProfile(false);
+    
     if (success) {
-        alert('Profile updated and synced successfully!');
+      // If the user name changed, let's force a reload after a short delay 
+      // to ensure the sidebar definitely sees it.
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
     }
   };
 
@@ -158,9 +175,11 @@ export default function SettingsManager({
               <button 
                 disabled={savingProfile || saving}
                 type="submit" 
-                className="w-full bg-[#1E293B] hover:bg-black text-white text-[13px] font-bold py-3 rounded-xl transition disabled:opacity-50 shadow-sm flex items-center justify-center gap-2"
+                className={`w-full text-white text-[13px] font-bold py-3 rounded-xl transition disabled:opacity-50 shadow-sm flex items-center justify-center gap-2 ${
+                  saveStatus === 'success' ? 'bg-green-500 hover:bg-green-600' : 'bg-[#1E293B] hover:bg-black'
+                }`}
               >
-                 {savingProfile ? 'Syncing...' : 'Update & Sync Profile'}
+                 {savingProfile ? 'Syncing...' : saveStatus === 'success' ? 'Profile Synced! ✅' : 'Update & Sync Profile'}
               </button>
            </div>
         </form>

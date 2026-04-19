@@ -4,6 +4,8 @@ import { redirect } from 'next/navigation';
 import { User, Phone, Mail, Key, MessageSquare } from 'lucide-react';
 import SettingsManager from '@/components/SettingsManager';
 
+export const dynamic = 'force-dynamic';
+
 export default async function SettingsPage() {
   const session = await getSession();
   if (!session) redirect('/login');
