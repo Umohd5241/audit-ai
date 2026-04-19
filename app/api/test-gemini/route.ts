@@ -6,14 +6,22 @@ export async function GET() {
     const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY || "AIzaSyBQ7jTiKhV0qB1xu4byPiVY7vBOHa7Rp1s";
     const genAI = new GoogleGenerativeAI(apiKey);
     
-    // Attempt to list models to see what's available
-    const modelsResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
-    const modelsData = await modelsResponse.json();
+    const modelsToTry = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-pro'];
+    const results = [];
+    
+    for (const modelName of modelsToTry) {
+        try {
+            const model = genAI.getGenerativeModel({ model: modelName });
+            const result = await model.generateContent("Hi");
+            results.push({ model: modelName, status: "SUCCESS", response: result.response.text() });
+        } catch (e: any) {
+            results.push({ model: modelName, status: "FAILED", error: e.message });
+        }
+    }
     
     return NextResponse.json({ 
       success: true, 
-      message: "Model list retrieved", 
-      models: modelsData,
+      results,
       keyUsed: `${apiKey.slice(0, 6)}...${apiKey.slice(-4)}`
     });
   } catch (error: any) {
