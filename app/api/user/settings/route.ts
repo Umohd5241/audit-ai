@@ -21,6 +21,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error('Update settings error:', error);
+    if (error?.message?.includes('RESOURCE_EXHAUSTED')) {
+        return NextResponse.json({ error: 'Database Quota Exceeded. Custom settings cannot be permanently saved.' }, { status: 429 });
+    }
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

@@ -38,13 +38,18 @@ export default function SettingsManager({
     
     setSaving(true);
     try {
-      await fetch('/api/user/settings', {
+      const res = await fetch('/api/user/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ [key]: newValue }),
       });
-    } catch (err) {
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to save settings');
+      }
+    } catch (err: any) {
       console.error(err);
+      alert(err.message || 'Settings cannot be permanently saved due to Database Quota Exhaustion. They will revert on refresh.');
       // Revert optimism
       if (key === 'whatsappNotify') setWhatsappNotify(currentValue);
       if (key === 'emailNotify') setEmailNotify(currentValue);
