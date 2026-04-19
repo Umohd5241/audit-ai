@@ -214,7 +214,7 @@ Be concise and direct. Responses should be under 200 words.`.trim();
     await batch.commit();
 
     return NextResponse.json({
-      success:    true,
+      success:    !inferenceError,
       aiResponse,
       latency,
       tokens,
