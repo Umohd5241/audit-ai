@@ -1,0 +1,5 @@
+{
+  "name": "Audit AI",
+  "description": "Advanced startup stress-testing system. Simulates a high-stakes expert panel (VC, Architect, Legal, Advisor) to challenge assumptions, expose weaknesses, and prediction failures.",
+  "requestFramePermissions": []
+}

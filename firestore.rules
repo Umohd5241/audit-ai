@@ -1,0 +1,94 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() { return request.auth != null; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+
+    // Blueprint Validations
+    function isValidUser(data) {
+      return data.keys().hasAll(['userId', 'email', 'phoneNumber', 'createdAt']) &&
+             data.keys().size() == 4 &&
+             data.userId == request.auth.uid &&
+             data.email is string && data.email.size() <= 200 &&
+             data.phoneNumber is string && data.phoneNumber.size() <= 20 &&
+             data.createdAt is string && data.createdAt.size() <= 50;
+    }
+
+    function isValidIdeaRoom(data) {
+      return data.keys().hasAll(['roomId', 'userId', 'ideaName', 'description', 'createdAt']) &&
+             data.keys().size() == 5 &&
+             data.roomId is string && data.roomId.size() <= 128 &&
+             data.userId == request.auth.uid &&
+             data.ideaName is string && data.ideaName.size() <= 100 &&
+             data.description is string && data.description.size() <= 2000 &&
+             data.createdAt is string && data.createdAt.size() <= 50;
+    }
+
+    function isValidMessage(data) {
+      return data.keys().hasAll(['messageId', 'roomId', 'userId', 'sender', 'content', 'timestamp']) &&
+             data.keys().size() == 6 &&
+             data.messageId is string && data.messageId.size() <= 128 &&
+             data.roomId is string && data.roomId.size() <= 128 &&
+             data.userId == request.auth.uid &&
+             data.sender in ['user', 'ai'] &&
+             data.content is string && data.content.size() <= 5000 &&
+             data.timestamp is string && data.timestamp.size() <= 50;
+    }
+
+    function isValidReport(data) {
+      return data.keys().hasAll(['reportId', 'roomId', 'userId', 'score', 'summary', 'createdAt']) &&
+             data.keys().size() == 6 &&
+             data.reportId is string && data.reportId.size() <= 128 &&
+             data.roomId is string && data.roomId.size() <= 128 &&
+             data.userId == request.auth.uid &&
+             data.score is number &&
+             data.summary is string && data.summary.size() <= 10000 &&
+             data.createdAt is string && data.createdAt.size() <= 50;
+    }
+
+    match /users/{userId} {
+      allow get: if isSignedIn() && isValidId(userId) && request.auth.uid == userId;
+      // List disallowed deliberately for PII safety
+      allow create: if isSignedIn() && isValidId(userId) && request.auth.uid == userId && isValidUser(request.resource.data);
+      allow update: if isSignedIn() && isValidId(userId) && request.auth.uid == userId && isValidUser(request.resource.data) &&
+                       request.resource.data.diff(resource.data).affectedKeys().hasOnly(['email', 'phoneNumber']);
+    }
+
+    match /ideaRooms/{roomId} {
+      allow get: if isSignedIn() && isValidId(roomId) && resource.data.userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(roomId) && isValidIdeaRoom(request.resource.data) &&
+                    exists(/databases/$(database)/documents/users/$(request.auth.uid));
+      // No updates for MVP based on requirements
+    }
+
+    match /ideaRooms/{roomId}/messages/{messageId} {
+      // NOTE: User only fetches messages of their own rooms
+      allow get: if isSignedIn() && isValidId(messageId) && resource.data.userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(messageId) && isValidMessage(request.resource.data) &&
+                    get(/databases/$(database)/documents/ideaRooms/$(roomId)).data.userId == request.auth.uid;
+    }
+
+    match /messages/{messageId} {
+      // Legacy path, deny all
+      allow read, write: if false;
+    }
+
+    match /reports/{reportId} {
+      allow get: if isSignedIn() && isValidId(reportId) && resource.data.userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      // Creation restricted to server logic (Admin SDK) since the AI decides
+      allow create, update: if false; 
+    }
+
+    match /whatsappSessions/{phoneNumber} {
+      // Admin-only routing mechanism, handled by Webhook. Client should never read/write.
+      allow read, write: if false;
+    }
+  }
+}
