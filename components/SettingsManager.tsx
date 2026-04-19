@@ -95,6 +95,14 @@ export default function SettingsManager({
     }
   };
 
+  const scrollToField = (id: string) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.focus();
+    }
+  };
+
   return (
     <>
       {/* Profile Section */}
@@ -110,6 +118,7 @@ export default function SettingsManager({
               <div>
                 <label className="block text-[11px] font-bold text-[#64748B] mb-1.5 uppercase tracking-wider">Display Name</label>
                 <input 
+                  id="displayNameInput"
                   type="text" 
                   value={displayName} 
                   onChange={(e) => setDisplayName(e.target.value)}
@@ -120,6 +129,7 @@ export default function SettingsManager({
               <div>
                 <label className="block text-[11px] font-bold text-[#64748B] mb-1.5 uppercase tracking-wider">WhatsApp Number</label>
                 <input 
+                  id="whatsappInput"
                   type="tel" 
                   value={phoneNumber} 
                   onChange={(e) => setPhoneNumber(e.target.value)}
@@ -133,6 +143,7 @@ export default function SettingsManager({
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8] text-[13px]">@</span>
                 <input 
+                  id="telegramInput"
                   type="text" 
                   value={telegramHandle} 
                   onChange={(e) => setTelegramHandle(e.target.value)}
@@ -163,7 +174,7 @@ export default function SettingsManager({
             <h2 className="text-[15px] font-semibold text-[#1E293B]">Notifications</h2>
             {saving && <span className="ml-auto text-[11px] text-[#64748B] animate-pulse">Saving...</span>}
           </div>
-          <div className="space-y-0">
+          <div className="space-y-0 text-left">
             {[
               { key: 'whatsappNotify' as const, label: 'WhatsApp Alerts', current: whatsappNotify },
               { key: 'emailNotify' as const, label: 'Email Alerts', current: emailNotify },
@@ -222,10 +233,11 @@ export default function SettingsManager({
           </div>
           <h2 className="text-[15px] font-semibold text-[#1E293B]">Bot Integrations</h2>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
           {[
             { 
               name: 'WhatsApp Bot', 
+              id: 'whatsappInput',
               desc: 'Audit via WhatsApp messenger', 
               connected: !!phoneNumber, 
               icon: MessageSquare,
@@ -234,6 +246,7 @@ export default function SettingsManager({
             },
             { 
               name: 'Telegram Bot', 
+              id: 'telegramInput',
               desc: 'Audit via Telegram messenger', 
               connected: !!telegramHandle, 
               icon: Globe,
@@ -252,28 +265,20 @@ export default function SettingsManager({
                 </div>
               </div>
               {item.connected ? (
-                <span className="text-[9px] font-black uppercase tracking-tighter px-2 py-0.5 rounded bg-green-500 text-white shadow-sm">
-                  Live
+                <span className="text-[9px] font-black uppercase tracking-tighter px-2 py-0.5 rounded bg-green-500 text-white shadow-sm flex items-center gap-1">
+                   <span className="w-1 h-1 rounded-full bg-white pulse-dot" />
+                   Live
                 </span>
               ) : (
-                <span className="text-[9px] font-bold uppercase tracking-tighter px-2 py-0.5 rounded bg-[#E2E8F0] text-[#64748B]">
-                  No Link
-                </span>
+                <button 
+                  onClick={() => scrollToField(item.id)}
+                  className="text-[9px] font-bold uppercase tracking-tighter px-2 py-1 rounded bg-white hover:bg-black border border-[rgba(0,0,0,0.08)] hover:text-white transition shadow-sm"
+                >
+                  Link
+                </button>
               )}
             </div>
           ))}
         </div>
-        <div className="mt-4 p-3 bg-indigo-50/50 rounded-lg border border-indigo-100/50">
-           <p className="text-[11px] text-[#6366F1] flex items-center gap-2">
-              <Bell className="w-3 h-3" />
-              Note: To "Connect", simply update your WhatsApp number or Telegram handle in the Profile section above.
-           </p>
-        </div>
       </div>
-    </>
-  );
-}
 
-    </>
-  );
-}
