@@ -20,7 +20,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   } catch (error: any) {
     console.error('Firestore error in DashboardLayout:', error);
     // Generic fallback for any database error to prevent total app crash
-    user = { email: session.email, phoneNumber: 'Data temporarily unavailable' };
+    user = { email: session.email, phoneNumber: undefined };
   }
 
   return (
