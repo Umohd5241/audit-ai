@@ -206,7 +206,7 @@ export default function RoomChat({ roomId }: { roomId: string }) {
       if (!apiKey) throw new Error('API Key missing.');
 
       const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
       const prompt = `Analyze the following AI output and verify if it provides these sections: DECISION, Executive Verdict, Why This May Fail, Key Risks to Address, What Needs to Change?
       Output: """${fullText}"""

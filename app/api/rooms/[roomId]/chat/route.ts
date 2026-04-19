@@ -124,7 +124,7 @@ Description: ${roomContext?.description ?? 'No description provided'}
 Be concise and direct. Responses should be under 200 words.`.trim();
 
       const model = genAI.getGenerativeModel({ 
-        model: 'gemini-1.5-flash',
+        model: 'gemini-2.0-flash',
         systemInstruction,
         safetySettings: [
           { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },

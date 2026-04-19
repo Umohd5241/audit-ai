@@ -107,7 +107,7 @@ export async function POST(req: Request) {
         parts: [{ text: doc.data().content }]
     }));
 
-    const modelName = 'gemini-1.5-flash';
+    const modelName = 'gemini-2.0-flash';
     const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
     if (!apiKey) throw new Error('API Configuration Missing.');
     
