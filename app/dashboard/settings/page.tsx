@@ -1,7 +1,7 @@
 import { getSession } from '@/lib/auth';
 import { adminDb } from '@/lib/firebase-admin';
 import { redirect } from 'next/navigation';
-import { User, Phone, Mail, Key } from 'lucide-react';
+import { User, Phone, Mail, Key, MessageSquare } from 'lucide-react';
 import SettingsManager from '@/components/SettingsManager';
 
 export default async function SettingsPage() {
