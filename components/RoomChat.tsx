@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import Markdown from 'react-markdown';
 import { RefreshCw, Send, ShieldAlert, AlertTriangle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { parseDecision } from '@/lib/decision-parser';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -202,53 +202,29 @@ export default function RoomChat({ roomId }: { roomId: string }) {
   const runReflectionAsync = async (fullText: string, msgId: string) => {
     setReflecting(true);
     try {
-      const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-      if (!apiKey) throw new Error('Gemini API key not available for reflection.');
+      const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || "AIzaSyBQ7jTiKhV0qB1xu4byPiVY7vBOHa7Rp1s";
+      if (!apiKey) throw new Error('Reflector skipped: No key.');
 
-      const ai = new GoogleGenAI({ apiKey });
-      const prompt = `Analyze the following AI output and verify if it meets these criteria:
-1. Did it provide all 5 required sections: DECISION, Executive Verdict, Why This May Fail, Key Risks to Address, What Needs to Change?
-2. Is the macro decision (PROCEED/PIVOT/REJECT) clearly stated?
-3. Are there explicit, actionable directives?
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
-OUTPUT TO ANALYZE:
-"""
-${fullText}
-"""
+      const prompt = `Analyze the following AI output and verify if it provides these sections: DECISION, Executive Verdict, Why This May Fail, Key Risks to Address, What Needs to Change?
+      Output: """${fullText}"""
+      Respond ONLY with: {"completed":true/false,"missing":"sections here","confidence":0-100}`;
 
-Respond ONLY with a valid JSON object — no markdown fences, no extra text:
-{"completed":true,"missing":"None","confidence":90}`;
+      const result = await model.generateContent(prompt);
+      const raw = result.response.text().replace(/```json/gi, '').replace(/```/g, '').trim();
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.0-flash',
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      });
-
-      // @google/genai v1.x: .text is a getter property, NOT response.response.text()
-      const raw = ((response as any)?.text ?? '').replace(/```json/gi, '').replace(/```/g, '').trim();
-
-      // Race-condition guard: discard if a newer message has since been sent
       if (activeMessageIdRef.current !== msgId) return;
 
       try {
         const parsed: ReflectionResult = JSON.parse(raw);
-        // Validate shape before applying to state
-        if (
-          typeof parsed.completed  === 'boolean' &&
-          typeof parsed.missing    === 'string'  &&
-          typeof parsed.confidence === 'number'
-        ) {
-          setReflectionLog(parsed);
-        } else {
-          throw new Error('Unexpected reflection shape');
-        }
+        setReflectionLog(parsed);
       } catch {
-        // If JSON parse fails, show a safe degraded state
-        setReflectionLog({ completed: false, missing: 'Unable to verify', confidence: 0 });
+        setReflectionLog({ completed: false, missing: 'Structure check failed', confidence: 0 });
       }
     } catch (err) {
-      console.warn('[RoomChat] Reflection agent error (non-fatal):', err);
-      // Silent fail — reflection is non-blocking
+      console.warn('[RoomChat] Reflection skipped:', err);
     } finally {
       setReflecting(false);
     }
