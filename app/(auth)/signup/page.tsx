@@ -19,6 +19,13 @@ export default function SignupPage() {
     setLoading(true);
 
     try {
+      // auth is guaranteed to be initialized by lib/firebase.ts
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const idToken = await userCredential.user.getIdToken();
+
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ idToken, email, phoneNumber }),
       });
 
