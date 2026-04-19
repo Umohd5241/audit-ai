@@ -25,12 +25,29 @@ export default async function RoomPage({ params }: { params: Promise<{ id: strin
     room = roomDoc.data()!;
   } catch (error: any) {
     console.error('Firestore error in RoomPage:', error);
-    if (error.code === 8 || (error.message && error.message.includes('Quota exceeded'))) {
+    if (error.code === 8 || (error.message && error.message.includes('Quota exceeded')) || error.message?.includes('mock')) {
       // Minimal mock room
-      room = { ideaName: 'Audit Session (View Only)', userId: session.userId, description: 'You have reached your Firebase quota limits. High-stakes analysis requires more compute credits.' };
+      room = { 
+        ideaName: id === 'mock-2' ? 'Decentralized Energy Grid' : 'AI Personal Shopper', 
+        userId: session.userId, 
+        description: 'You have reached your Firebase quota limits. This is a local mock room serving as a demo interface.',
+        createdAt: new Date().toISOString(),
+        messageCount: 5
+      };
     } else {
       throw error;
     }
+  }
+
+  // Support our mock links navigating here directly even if they bypass error catching
+  if (!room && id.startsWith('mock')) {
+      room = { 
+        ideaName: id === 'mock-2' ? 'Decentralized Energy Grid' : 'AI Personal Shopper', 
+        userId: session.userId, 
+        description: 'This is a local demo room rendered because the database is currently over quota.',
+        createdAt: new Date().toISOString(),
+        messageCount: 5
+      };
   }
   if (room.userId !== session.userId) redirect('/dashboard');
 
