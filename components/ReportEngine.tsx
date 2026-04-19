@@ -43,22 +43,23 @@ export default function ReportEngine({ roomId }: { roomId: string }) {
 
       const chatContent = messagesData.messages.map((m: any) => `${m.sender.toUpperCase()}: ${m.content}`).join('\n\n');
 
-      const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+      const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || "AIzaSyBQ7jTiKhV0qB1xu4byPiVY7vBOHa7Rp1s";
       if (!apiKey) throw new Error('Report generation is unavailable. Please contact support.');
 
-      const ai = new GoogleGenAI({ apiKey });
-      
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.1-pro-preview',
-        contents: [{ role: 'user', parts: [{ text: `Generate due diligence for this Audit Session:\n\n${chatContent}` }] }],
-        config: {
-            systemInstruction: REPORT_INSTRUCTION,
-            responseMimeType: "application/json",
-            temperature: 0.1
-        }
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({ 
+          model: 'gemini-1.5-flash',
+          systemInstruction: REPORT_INSTRUCTION,
+          generationConfig: {
+              responseMimeType: "application/json",
+              temperature: 0.1
+          }
       });
 
-      const aiText = response.text;
+      const prompt = `Generate due diligence for this Audit Session:\n\n${chatContent}`;
+      const result = await model.generateContent(prompt);
+      const aiText = result.response.text();
+      
       if (!aiText) throw new Error('Failed to generate report: empty response.');
 
       // Strip markdown fences the model may wrap around JSON

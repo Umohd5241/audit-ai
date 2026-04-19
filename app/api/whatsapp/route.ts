@@ -212,20 +212,20 @@ export async function POST(req: Request) {
               parts: [{ text: h.content }]
           }));
           
-          const model = 'gemini-3-flash-preview';
-          const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+          const modelName = 'gemini-1.5-flash';
+          const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY || "AIzaSyBQ7jTiKhV0qB1xu4byPiVY7vBOHa7Rp1s";
           if (!apiKey) throw new Error('GEMINI_API_KEY missing');
           
-          const aiInstance = new GoogleGenAI({ apiKey });
-
-          const result = await aiInstance.models.generateContent({
-              model,
-              contents: chatContents,
-              config: {
-                  systemInstruction: CHAT_INSTRUCTIONS
-              }
+          const genAI = new GoogleGenerativeAI(apiKey);
+          const model = genAI.getGenerativeModel({ 
+              model: modelName,
+              systemInstruction: CHAT_INSTRUCTIONS
           });
-          aiResponseText = result.text || "The Audit Panel is currently reviewing your pitch in silence. Please provide more detail.";
+
+          const result = await model.generateContent({
+              contents: chatContents as any,
+          });
+          aiResponseText = result.response.text() || "The Audit Panel is currently reviewing your pitch in silence. Please provide more detail.";
       } catch (e) {
           console.error("Gemini Error:", e);
           aiResponseText = "There was an error communicating with the AI panel. Please try again.";

@@ -83,21 +83,21 @@ export async function POST(req: Request) {
         parts: [{ text: doc.data().content }]
     }));
 
-    const model = 'gemini-3-flash-preview';
-    const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+    const modelName = 'gemini-1.5-flash';
+    const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY || "AIzaSyBQ7jTiKhV0qB1xu4byPiVY7vBOHa7Rp1s";
     if (!apiKey) throw new Error('GEMINI_API_KEY missing');
     
-    const ai = new GoogleGenAI({ apiKey });
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ 
+        model: modelName,
+        systemInstruction: `${CHAT_INSTRUCTIONS}\n\nEvaluating Room: ${roomData?.ideaName}. Description: ${roomData?.description}.`
+    });
 
-    const result = await ai.models.generateContent({
-        model,
-        contents: history,
-        config: {
-            systemInstruction: `${CHAT_INSTRUCTIONS}\n\nEvaluating Room: ${roomData?.ideaName}. Description: ${roomData?.description}.`
-        }
+    const result = await model.generateContent({
+        contents: history as any,
     });
     
-    const aiText = result.text || "The Audit Panel is temporarily silent. Please re-state your assumption.";
+    const aiText = result.response.text() || "The Audit Panel is temporarily silent. Please re-state your assumption.";
 
     // Log AI Message
     const aiMsgId = uuidv4();

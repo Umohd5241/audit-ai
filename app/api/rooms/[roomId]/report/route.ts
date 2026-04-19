@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import { adminDb } from '@/lib/firebase-admin';
-import { GoogleGenAI } from '@google/genai';
+// SDK import removed
 import { getSession } from '@/lib/auth';
 import { REPORT_INSTRUCTION } from '@/lib/ai-config';
 
