@@ -83,8 +83,8 @@ export default async function SettingsPage() {
           </div>
           <div className="space-y-0">
             {[
-              { name: 'WhatsApp', desc: 'Chat with Judge AI via WhatsApp' },
-              { name: 'Telegram', desc: 'Chat with Judge AI via Telegram' },
+              { name: 'WhatsApp', desc: 'Chat with THE EQUALS via WhatsApp' },
+              { name: 'Telegram', desc: 'Chat with THE EQUALS via Telegram' },
             ].map((item, i) => (
               <div key={i} className={`flex items-center justify-between py-3.5 ${i === 0 ? 'border-b border-[rgba(0,0,0,0.04)]' : ''}`}>
                 <div>

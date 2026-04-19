@@ -26,7 +26,7 @@ export default function DashboardSidebar({ phoneNumber }: { phoneNumber?: string
     <aside className="w-[260px] h-full bg-white border-r border-[rgba(0,0,0,0.06)] px-5 py-7 hidden md:flex flex-col shadow-[1px_0_8px_rgba(0,0,0,0.02)]">
       <Link href="/dashboard" className="text-[20px] font-bold tracking-[-0.02em] mb-8 flex items-center gap-2.5 transition-opacity hover:opacity-80 px-1">
         <div className="w-7 h-7 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-lg shadow-[0_2px_8px_rgba(99,102,241,0.3)] flex items-center justify-center shrink-0" />
-        <span className="text-[#1E293B]">Judge AI</span>
+        <span className="text-[#1E293B]">THE EQUALS</span>
       </Link>
 
       <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#B0B8C4] mb-3 px-4">Navigation</p>

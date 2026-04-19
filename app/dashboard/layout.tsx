@@ -25,7 +25,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <header className="md:hidden flex items-center justify-between px-6 py-4 border-b border-[rgba(0,0,0,0.06)] bg-white/80 backdrop-blur-md sticky top-0 z-20">
           <Link href="/dashboard" className="flex items-center gap-2">
             <div className="w-5 h-5 bg-indigo-500 rounded font-bold" />
-            <h1 className="text-lg font-bold tracking-tight text-[#1E293B]">Judge AI</h1>
+            <h1 className="text-lg font-bold tracking-tight text-[#1E293B]">THE EQUALS</h1>
           </Link>
           <LogoutButton />
         </header>

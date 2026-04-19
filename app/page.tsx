@@ -10,7 +10,7 @@ export default function Home() {
             <div className="w-8 h-8 bg-indigo-500 rounded-md shadow-[0_0_12px_rgba(99,102,241,0.2)] flex items-center justify-center shrink-0">
                <Rocket className="w-5 h-5 text-white" />
             </div>
-            <h1 className="text-[20px] font-bold tracking-[-0.02em] text-[#1E293B]">Judge AI</h1>
+            <h1 className="text-[20px] font-bold tracking-[-0.02em] text-[#1E293B]">THE EQUALS</h1>
           </div>
           <nav className="flex items-center gap-6">
             <Link href="/login" className="text-[14px] font-medium text-[#64748B] hover:text-[#1E293B] transition">Login</Link>
@@ -56,7 +56,7 @@ export default function Home() {
       </main>
 
       <footer className="py-8 border-t border-[rgba(0,0,0,0.06)] text-center text-[#94a3b8] text-[13px] bg-white/60">
-        &copy; {new Date().getFullYear()} Judge AI. Built for validation.
+        &copy; {new Date().getFullYear()} THE EQUALS. Built for validation.
       </footer>
     </div>
   );

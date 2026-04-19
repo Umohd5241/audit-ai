@@ -31,7 +31,7 @@ export default function MentorSidebar({ ideaName, messageCount = 0 }: { ideaName
         <div className="w-20 h-20 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center mx-auto mb-4 shadow-[0_4px_16px_rgba(245,158,11,0.2)]">
           <span className="text-[28px] font-black text-white">JA</span>
         </div>
-        <h3 className="text-[16px] font-bold text-[#1E293B]">Judge AI</h3>
+        <h3 className="text-[16px] font-bold text-[#1E293B]">THE EQUALS</h3>
         <p className="text-[12px] font-semibold text-amber-600 tracking-wider uppercase mt-1">Startup Audit Panel</p>
       </div>
 

@@ -2,7 +2,7 @@ import type {Metadata} from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Audit AI | Startup Stress-Testing',
+  title: 'THE EQUALS | Startup Stress-Testing',
   description: 'High-stakes AI audit system to stress-test your startup assumptions.',
 };
 

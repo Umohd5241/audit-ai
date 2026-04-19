@@ -2,7 +2,7 @@ import { Rocket, Sparkles, Shield, TrendingUp } from 'lucide-react';
 
 const agents = [
   {
-    name: 'Judge AI',
+    name: 'THE EQUALS',
     role: 'Lead Startup Auditor',
     description: 'The primary AI mentor that stress-tests your startup ideas with tough questions, identifies weaknesses, and provides actionable feedback.',
     icon: Shield,
