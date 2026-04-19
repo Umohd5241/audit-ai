@@ -42,10 +42,9 @@ export default async function SettingsPage() {
           <div className="space-y-0">
             {[
               { icon: Mail, label: 'Email', value: user?.email || '—' },
-              { icon: Phone, label: 'WhatsApp', value: user?.phoneNumber || '—' },
               { icon: Key, label: 'User ID', value: session.userId.slice(0, 20) + '...' },
             ].map((item, i) => (
-              <div key={i} className={`flex items-center justify-between py-3.5 ${i < 2 ? 'border-b border-[rgba(0,0,0,0.04)]' : ''}`}>
+              <div key={i} className={`flex items-center justify-between py-3.5 ${i < 1 ? 'border-b border-[rgba(0,0,0,0.04)]' : ''}`}>
                 <div className="flex items-center gap-3">
                   <item.icon className="w-4 h-4 text-[#B0B8C4]" />
                   <span className="text-[13px] text-[#64748B]">{item.label}</span>

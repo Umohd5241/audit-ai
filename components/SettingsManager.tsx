@@ -13,7 +13,9 @@ export default function SettingsManager({
   const [whatsappNotify, setWhatsappNotify] = useState(initialSettings?.whatsappNotify ?? true);
   const [emailNotify, setEmailNotify] = useState(initialSettings?.emailNotify ?? false);
   const [highContrast, setHighContrast] = useState(initialSettings?.highContrast ?? false);
+  const [phoneNumber, setPhoneNumber] = useState(initialSettings?.phoneNumber ?? '');
   const [saving, setSaving] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
 
   useEffect(() => {
     if (highContrast) {
@@ -22,6 +24,38 @@ export default function SettingsManager({
       document.body.removeAttribute('data-theme');
     }
   }, [highContrast]);
+
+  const saveSettings = async (updates: any) => {
+    setSaving(true);
+    try {
+      const res = await fetch('/api/user/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to save settings');
+      }
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || 'Settings cannot be permanently saved due to Database Quota Exhaustion. They will revert on refresh.');
+      return false;
+    } finally {
+      setSaving(false);
+    }
+    return true;
+  };
+
+  const handleProfileUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingProfile(true);
+    const success = await saveSettings({ phoneNumber });
+    setSavingProfile(false);
+    if (success) {
+        alert('Profile updated successfully!');
+    }
+  };
 
   const toggleSetting = async (key: 'whatsappNotify' | 'emailNotify' | 'highContrast', currentValue: boolean) => {
     const newValue = !currentValue;
@@ -36,20 +70,8 @@ export default function SettingsManager({
       }
     }
     
-    setSaving(true);
-    try {
-      const res = await fetch('/api/user/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ [key]: newValue }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'Failed to save settings');
-      }
-    } catch (err: any) {
-      console.error(err);
-      alert(err.message || 'Settings cannot be permanently saved due to Database Quota Exhaustion. They will revert on refresh.');
+    const success = await saveSettings({ [key]: newValue });
+    if (!success) {
       // Revert optimism
       if (key === 'whatsappNotify') setWhatsappNotify(currentValue);
       if (key === 'emailNotify') setEmailNotify(currentValue);
@@ -61,13 +83,43 @@ export default function SettingsManager({
           document.body.removeAttribute('data-theme');
         }
       }
-    } finally {
-      setSaving(false);
     }
   };
 
   return (
     <>
+      {/* Profile Section */}
+      <div className="glass-card rounded-2xl p-6 card-glow">
+        <div className="flex items-center gap-3 mb-5">
+           <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center">
+              <Bell className="w-4 h-4 text-indigo-500" />
+           </div>
+           <h2 className="text-[15px] font-semibold text-[#1E293B]">Profile Information</h2>
+        </div>
+        <form onSubmit={handleProfileUpdate} className="space-y-4">
+           <div>
+              <label className="block text-[12px] font-bold text-[#1E293B] mb-1.5 uppercase tracking-wider">WhatsApp Number</label>
+              <div className="flex gap-2">
+                <input 
+                  type="tel" 
+                  value={phoneNumber} 
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  placeholder="+1234567890" 
+                  className="flex-1 text-[13px] bg-[#FAFBFC] border border-[rgba(0,0,0,0.08)] rounded-xl px-4 py-2.5 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-400 transition"
+                />
+                <button 
+                  disabled={savingProfile || saving}
+                  type="submit" 
+                  className="bg-[#1E293B] hover:bg-black text-white text-[12px] font-bold px-5 py-2.5 rounded-xl transition disabled:opacity-50"
+                >
+                   {savingProfile ? 'Saving...' : 'Update'}
+                </button>
+              </div>
+              <p className="text-[10px] text-[#94A3B8] mt-2">Enter your number with international code (e.g. +44...)</p>
+           </div>
+        </form>
+      </div>
+
       {/* Notifications */}
       <div className="glass-card rounded-2xl p-6 card-glow">
         <div className="flex items-center gap-3 mb-5">
@@ -85,6 +137,7 @@ export default function SettingsManager({
             <div key={i} className={`flex items-center justify-between py-3.5 ${i === 0 ? 'border-b border-[rgba(0,0,0,0.04)]' : ''}`}>
               <span className="text-[13px] text-[#64748B]" id={`label-${item.key}`}>{item.label}</span>
               <button 
+                disabled={saving}
                 onClick={() => toggleSetting(item.key, item.current)}
                 role="switch"
                 aria-checked={item.current}
@@ -113,6 +166,7 @@ export default function SettingsManager({
               <p className="text-[11px] text-[#94A3B8] mt-0.5">Increases legibility with stark black & white themes.</p>
             </div>
             <button 
+              disabled={saving}
               onClick={() => toggleSetting('highContrast', highContrast)}
               role="switch"
               aria-checked={highContrast}
