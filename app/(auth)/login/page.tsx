@@ -20,12 +20,8 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      if (!process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
-        throw new Error('Firebase Auth cannot initialize because the API key is missing. Please add your NEXT_PUBLIC_FIREBASE_API_KEY and other credentials in the Settings > Secrets menu.');
-      }
-
-      if (!auth) {
-        throw new Error('Firebase Auth is not initialized. Check your Firebase configuration.');
+      if (!process.env.NEXT_PUBLIC_FIREBASE_API_KEY || !auth) {
+        throw new Error('configuration-missing');
       }
 
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
@@ -44,14 +40,21 @@ export default function LoginPage() {
 
       window.location.href = '/dashboard';
     } catch (err: any) {
-      if (err.code === 'auth/configuration-not-found') {
-        setError('Firebase Authentication is not configured or the Email/Password provider is not enabled in your Firebase Project Console.');
-      } else if (err.code === 'auth/network-request-failed') {
-        setError('Network Error: Your browser may be blocking Firebase Auth. Please try disabling your ad-blocker/tracking protection.');
-      } else if (err.code === 'auth/unauthorized-domain') {
-        setError('Domain not authorized: Please add this URL to "Authorized Domains" in your Firebase Authentication settings.');
+      const code = err?.code ?? '';
+      if (code === 'auth/invalid-credential' || code === 'auth/wrong-password' || code === 'auth/user-not-found') {
+        setError('Incorrect email or password. Please try again.');
+      } else if (code === 'auth/too-many-requests') {
+        setError('Too many failed attempts. Please wait a few minutes and try again.');
+      } else if (code === 'auth/network-request-failed') {
+        setError('Connection failed. Please check your internet connection and try again.');
+      } else if (code === 'auth/user-disabled') {
+        setError('This account has been disabled. Please contact support.');
+      } else if (err.message?.includes('server session') || err.message?.includes('Firebase Admin')) {
+        setError('Something went wrong on our end. Please try again in a moment.');
+      } else if (code === 'auth/configuration-not-found' || code === 'auth/unauthorized-domain') {
+        setError('Authentication is not fully configured. Please contact the administrator.');
       } else {
-        setError(err.message || 'Login failed');
+        setError(err.message || 'Login failed. Please try again.');
       }
     } finally {
       setLoading(false);

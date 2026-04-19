@@ -3,12 +3,12 @@
 import { ShieldAlert, Target, TrendingUp, Search, Swords, FileText } from 'lucide-react';
 
 const AUDIT_PHASES = [
-  { id: 'init', label: 'Protocol Initialization', icon: Target, minMessages: 0 },
-  { id: 'problem', label: 'Problem Identification', icon: Search, minMessages: 3 },
-  { id: 'market', label: 'Market Assessment', icon: TrendingUp, minMessages: 6 },
-  { id: 'competitive', label: 'Competitive Advantage', icon: Swords, minMessages: 10 },
-  { id: 'stress', label: 'Stress Testing', icon: ShieldAlert, minMessages: 15 },
-  { id: 'synthesis', label: 'DD Synthesis', icon: FileText, minMessages: 20 },
+  { id: 'init',        label: 'Getting Started',         icon: Target,     minMessages: 0  },
+  { id: 'problem',     label: 'Understanding the Problem', icon: Search,     minMessages: 3  },
+  { id: 'market',      label: 'Market Assessment',        icon: TrendingUp, minMessages: 6  },
+  { id: 'competitive', label: 'Competitive Landscape',    icon: Swords,     minMessages: 10 },
+  { id: 'stress',      label: 'Deep Evaluation',          icon: ShieldAlert, minMessages: 15 },
+  { id: 'synthesis',   label: 'Generating Report',        icon: FileText,   minMessages: 20 },
 ];
 
 function getActivePhase(messageCount: number): number {
@@ -21,18 +21,18 @@ function getActivePhase(messageCount: number): number {
   return activeIdx;
 }
 
-export default function MentorSidebar({ ideaName, messageCount = 0 }: { ideaName: string; messageCount: number }) {
+export default function AuditSidebar({ ideaName, messageCount = 0 }: { ideaName: string; messageCount: number }) {
   const activePhaseIdx = getActivePhase(messageCount);
 
   return (
     <div className="flex flex-col h-full">
-      {/* Mentor Profile */}
+      {/* Audit Profile */}
       <div className="text-center mb-8">
-        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center mx-auto mb-4 shadow-[0_4px_16px_rgba(245,158,11,0.2)]">
-          <span className="text-[28px] font-black text-white">JA</span>
+        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center mx-auto mb-4 shadow-[0_4px_16px_rgba(99,102,241,0.2)]">
+          <span className="text-[28px] font-black text-white">AI</span>
         </div>
         <h3 className="text-[16px] font-bold text-[#1E293B]">THE EQUALS</h3>
-        <p className="text-[12px] font-semibold text-amber-600 tracking-wider uppercase mt-1">Startup Audit Panel</p>
+        <p className="text-[12px] font-semibold text-indigo-500 tracking-wider uppercase mt-1">AI Audit Panel</p>
       </div>
 
       {/* Phase Tracker */}

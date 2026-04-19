@@ -11,14 +11,21 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { ideaName, description } = await req.json();
+    let body: any;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
+
+    const { ideaName, description, agentId } = body ?? {};
 
     if (!ideaName || !description) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
     if (!adminDb) {
-      throw new Error('Firebase Admin SDK is not properly initialized. Check environment variables.');
+      return NextResponse.json({ error: 'Service unavailable' }, { status: 503 });
     }
 
     const roomId = uuidv4();
@@ -27,10 +34,11 @@ export async function POST(req: Request) {
       userId: session.userId,
       ideaName,
       description,
+      agentId: agentId || 'THE EQUALS',
       createdAt: new Date().toISOString()
     });
 
-    const introMsg = `Welcome to your Idea Room for "${ideaName}"! 🚀\nI'm your AI Startup Mentor. I will evaluate your idea from the perspectives of an Investor, a Technical Expert, a Legal Advisor, and a Devil’s Advocate.\n\nSend START_${roomId} to me on WhatsApp to sync this room!`;
+    const introMsg = `Welcome to your Audit Session for "${ideaName}".\nThe Audit Panel is ready. Submit your core assumptions to begin the stress-testing sequence.`;
     const messageId = uuidv4();
     
     await adminDb.collection('ideaRooms').doc(roomId).collection('messages').doc(messageId).set({

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { ArrowLeft, MessageCircle, Send } from 'lucide-react';
 import RoomChat from '@/components/RoomChat';
 import ReportEngine from '@/components/ReportEngine';
-import MentorSidebar from '@/components/MentorSidebar';
+import AuditSidebar from '@/components/MentorSidebar';
 import FounderDNA from '@/components/FounderDNA';
 
 export default async function RoomPage({ params }: { params: Promise<{ id: string }> }) {
@@ -46,7 +46,7 @@ export default async function RoomPage({ params }: { params: Promise<{ id: strin
           <div className="h-5 w-px bg-[rgba(0,0,0,0.08)]" />
           <div>
             <h1 className="text-[18px] font-bold text-[#1E293B] tracking-tight">{room.ideaName}</h1>
-            <p className="text-[12px] text-[#94A3B8]">Vetting Session Active</p>
+            <p className="text-[12px] text-[#94A3B8]">Audit Session Active</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -67,14 +67,14 @@ export default async function RoomPage({ params }: { params: Promise<{ id: strin
 
       {/* 3-Column Layout */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Left: Mentor Sidebar — independent scroll */}
+        {/* Left: Audit Sidebar — independent scroll */}
         <aside className="w-[240px] border-r border-[rgba(0,0,0,0.06)] bg-white hidden xl:flex flex-col shrink-0">
           <div className="p-6 overflow-y-auto flex-1">
-            <MentorSidebar ideaName={room.ideaName} messageCount={messageCount} />
+            <AuditSidebar ideaName={room.ideaName} messageCount={messageCount} />
           </div>
         </aside>
 
-        {/* Center: Chat — its own scroll */}
+        {/* Center: Audit Log — its own scroll */}
         <div className="flex-1 flex flex-col overflow-hidden min-w-0">
           <RoomChat roomId={id} />
         </div>

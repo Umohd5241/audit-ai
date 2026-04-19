@@ -2,13 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutGrid, FileText, Rocket, Settings } from 'lucide-react';
+import { LayoutGrid, FileText, Rocket, Settings, BarChart2 } from 'lucide-react';
 import LogoutButton from '@/components/LogoutButton';
 
 const menuItems = [
-  { name: 'Idea Rooms', href: '/dashboard', icon: LayoutGrid, desc: 'Create and manage idea rooms' },
+  { name: 'Audit Sessions', href: '/dashboard', icon: LayoutGrid, desc: 'Create and manage audit sessions' },
   { name: 'Reports History', href: '/dashboard/reports', icon: FileText, desc: 'View past due diligence' },
-  { name: 'Mentor Agents', href: '/dashboard/agents', icon: Rocket, desc: 'AI evaluation agents' },
+  { name: 'Audit Agents', href: '/dashboard/agents', icon: Rocket, desc: 'AI audit personas' },
+  { name: 'Insights & Feedback', href: '/dashboard/feedback', icon: BarChart2, desc: 'Performance tracking' },
   { name: 'Settings', href: '/dashboard/settings', icon: Settings, desc: 'Account preferences' },
 ];
 

@@ -31,7 +31,7 @@ export default function Home() {
           </p>
           <div className="flex items-center justify-center gap-4">
             <Link href="/signup" className="flex items-center gap-2 bg-[#6366f1] hover:bg-[#4f46e5] text-white px-8 py-4 rounded-xl text-[16px] font-semibold transition shadow-[0_4px_25px_rgba(99,102,241,0.25)]">
-              Create an Idea Room <ArrowRight className="w-5 h-5 ml-2" />
+              Create an Audit Session <ArrowRight className="w-5 h-5 ml-2" />
             </Link>
           </div>
         </div>
@@ -40,7 +40,7 @@ export default function Home() {
            <div className="glass-card p-8 rounded-2xl glass-card-hover transition-all duration-300">
              <MessageSquare className="w-8 h-8 text-[#22c55e] mb-6" />
              <h3 className="text-[18px] font-semibold mb-3 text-[#1E293B]">WhatsApp Native</h3>
-             <p className="text-[14px] text-[#64748B] leading-relaxed">Instantly connect with your AI mentor through WhatsApp. Fast, conversational, and always accessible.</p>
+             <p className="text-[14px] text-[#64748B] leading-relaxed">Instantly connect with your AI Audit through WhatsApp. Fast, conversational, and always accessible.</p>
            </div>
            <div className="glass-card p-8 rounded-2xl glass-card-hover transition-all duration-300">
              <ShieldAlert className="w-8 h-8 text-[#f59e0b] mb-6" />

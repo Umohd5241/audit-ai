@@ -14,6 +14,31 @@
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 999px; }
   ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.2); }
+
+  /* Accessibility: Universal Keyboard Focus */
+  *:focus-visible {
+    outline: 3px solid #6366f1; /* Indigo 500 */
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(99,102,241,0.2);
+  }
+
+  /* Accessibility: High Contrast Mode */
+  body[data-theme="high-contrast"] {
+    background: #000000 !important;
+    color: #FFFFFF !important;
+  }
+  body[data-theme="high-contrast"] * {
+    border-color: #FFFFFF !important;
+  }
+  body[data-theme="high-contrast"] .glass-card {
+    background: #000000 !important;
+    border: 2px solid #FFFFFF !important;
+  }
+  body[data-theme="high-contrast"] p,
+  body[data-theme="high-contrast"] span:not(.font-bold),
+  body[data-theme="high-contrast"] div:not(.bg-indigo-500) {
+    color: #FFFFFF !important;
+  }
 }
 
 @layer utilities {

@@ -21,12 +21,8 @@ export default function SignupPage() {
     setLoading(true);
 
     try {
-      if (!process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
-        throw new Error('Firebase Auth cannot initialize because the configuration is missing. Please add your NEXT_PUBLIC_FIREBASE_* credentials in the Settings > Secrets menu.');
-      }
-
-      if (!auth) {
-        throw new Error('Firebase Auth is not initialized. Check your Firebase configuration.');
+      if (!process.env.NEXT_PUBLIC_FIREBASE_API_KEY || !auth) {
+        throw new Error('configuration-missing');
       }
 
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -45,14 +41,23 @@ export default function SignupPage() {
 
       window.location.href = '/dashboard';
     } catch (err: any) {
-      if (err.code === 'auth/configuration-not-found') {
-        setError('Firebase Authentication is not configured or the Email/Password provider is not enabled in your Firebase Project Console.');
-      } else if (err.code === 'auth/network-request-failed') {
-        setError('Network Error: Your browser may be blocking Firebase Auth. Please try disabling your ad-blocker/tracking protection.');
-      } else if (err.code === 'auth/unauthorized-domain') {
-        setError('Domain not authorized: Please add this URL to "Authorized Domains" in your Firebase Authentication settings.');
+      const code = err?.code ?? '';
+      if (code === 'auth/email-already-in-use') {
+        setError('An account with this email already exists. Try logging in instead.');
+      } else if (code === 'auth/weak-password') {
+        setError('Your password is too weak. Please use at least 6 characters.');
+      } else if (code === 'auth/invalid-email') {
+        setError('Please enter a valid email address.');
+      } else if (code === 'auth/network-request-failed') {
+        setError('Connection failed. Please check your internet connection and try again.');
+      } else if (code === 'auth/too-many-requests') {
+        setError('Too many attempts. Please wait a moment and try again.');
+      } else if (err.message?.includes('register') || err.message?.includes('database')) {
+        setError('Account created but profile setup failed. Please try logging in.');
+      } else if (code === 'auth/configuration-not-found' || code === 'auth/unauthorized-domain') {
+        setError('Authentication is not fully configured. Please contact the administrator.');
       } else {
-        setError(err.message || 'Registration failed');
+        setError(err.message || 'Sign up failed. Please try again.');
       }
     } finally {
       setLoading(false);

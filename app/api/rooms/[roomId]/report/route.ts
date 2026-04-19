@@ -69,10 +69,22 @@ export async function GET(req: Request, { params }: { params: Promise<{ roomId: 
             return NextResponse.json({ success: true, report: null });
         }
         
-        const report = reportsSnapshot.docs[0].data();
+        const doc = reportsSnapshot.docs[0].data();
 
-        return NextResponse.json({ success: true, report: { score: report.score, ...JSON.parse(report.summary) } });
-    } catch {
+        let parsedSummary: any = {};
+        try {
+          parsedSummary = doc.summary ? JSON.parse(doc.summary) : {};
+        } catch {
+          // Corrupted summary — return score-only report rather than crashing
+          console.error('[report/route] Failed to parse stored report summary for room:', roomId);
+        }
+
+        return NextResponse.json({
+          success: true,
+          report: { score: doc.score ?? 0, ...parsedSummary },
+        });
+    } catch (err: any) {
+        console.error('[report/route] GET error:', err?.message ?? err);
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 }

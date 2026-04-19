@@ -42,8 +42,8 @@ export default async function DashboardPage() {
           </div>
           <p className="text-[14px] text-[#64748B]">
             {rooms.length > 0
-              ? `You have ${rooms.length} active Idea Room${rooms.length === 1 ? '' : 's'} being analyzed.`
-              : 'Create your first idea room to begin the audit process.'}
+              ? `You have ${rooms.length} active Audit Session${rooms.length === 1 ? '' : 's'} being analyzed.`
+              : 'Create your first Audit Session to begin the audit process.'}
           </p>
         </div>
         <CreateRoomButton />
@@ -57,10 +57,10 @@ export default async function DashboardPage() {
             <div className="absolute left-10 right-10 top-1/2 h-px bg-gradient-to-r from-indigo-100 via-green-100 to-purple-100 -z-10" />
             
             {[
-              { icon: Lightbulb, label: 'Initiate Room', bg: 'bg-indigo-50', border: 'border-indigo-100', text: 'text-indigo-500' },
+              { icon: Lightbulb, label: 'Start Session', bg: 'bg-indigo-50', border: 'border-indigo-100', text: 'text-indigo-500' },
               { icon: MessageSquare, label: 'Pitch & Challenge', bg: 'bg-green-50', border: 'border-green-100', text: 'text-green-500' },
-              { icon: ShieldAlert, label: 'Stress Testing', bg: 'bg-amber-50', border: 'border-amber-100', text: 'text-amber-500' },
-              { icon: FileText, label: 'DD Synthesis', bg: 'bg-purple-50', border: 'border-purple-100', text: 'text-purple-500' },
+              { icon: ShieldAlert, label: 'Deep Evaluation', bg: 'bg-amber-50', border: 'border-amber-100', text: 'text-amber-500' },
+              { icon: FileText, label: 'Full Report', bg: 'bg-purple-50', border: 'border-purple-100', text: 'text-purple-500' },
             ].map((step, i) => (
               <div key={i} className="flex flex-col items-center gap-2.5 bg-[#F7F8FA] px-3">
                 <div className={`w-10 h-10 rounded-xl ${step.bg} border ${step.border} flex items-center justify-center transition-transform duration-300 hover:scale-110`}>
@@ -79,9 +79,9 @@ export default async function DashboardPage() {
           <div className="w-16 h-16 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center mb-5">
             <Lightbulb className="w-8 h-8 text-indigo-400" />
           </div>
-          <h3 className="text-[20px] font-semibold mb-2 text-[#1E293B]">No Idea Rooms Yet</h3>
+          <h3 className="text-[20px] font-semibold mb-2 text-[#1E293B]">No Audit Sessions Yet</h3>
           <p className="text-[14px] text-[#64748B] max-w-md mx-auto mb-8 leading-relaxed">
-            Create your first room to start pitching to the AI audit panel. Get real-time feedback on your startup assumptions.
+            Create your first session to start evaluating your startup idea with AI. You'll get honest, structured feedback.
           </p>
           <CreateRoomButton />
         </div>
@@ -94,7 +94,9 @@ export default async function DashboardPage() {
                 <div className="glass-card rounded-2xl p-6 h-full flex flex-col transition-all duration-250 card-glow">
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-[10px] uppercase tracking-[0.12em] text-[#94A3B8] font-semibold">
-                      {format(new Date(room.createdAt), 'MMM d, yyyy')}
+                      {room.createdAt
+                        ? (() => { try { return format(new Date(room.createdAt), 'MMM d, yyyy'); } catch { return '—'; } })()
+                        : '—'}
                     </span>
                     {messageCount > 5 && (
                       <span className="flex items-center gap-1 text-[10px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
@@ -109,10 +111,10 @@ export default async function DashboardPage() {
                   </p>
                   <div className="flex items-center justify-between mt-auto pt-4 border-t border-[rgba(0,0,0,0.04)]">
                     <span className="text-[11px] px-2.5 py-1 bg-[#F1F5F9] rounded-md text-[#64748B] font-medium">
-                      {messageCount > 0 ? `${messageCount} messages` : 'Awaiting pitch...'}
+                      {messageCount > 0 ? `${messageCount} message${messageCount === 1 ? '' : 's'}` : 'No messages yet'}
                     </span>
                     <span className="flex items-center gap-1.5 text-indigo-500 group-hover:text-indigo-600 text-[12px] font-semibold transition-all duration-200 group-hover:gap-2.5">
-                      Enter Room <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
+                      Open Session <ArrowRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
                     </span>
                   </div>
                 </div>

@@ -20,6 +20,13 @@ export default async function ReportsPage() {
     .map(doc => doc.data() as any)
     .filter(room => room.report);
 
+  // Safely parse report — may be a JSON string or already an object
+  function safeParseReport(raw: any): any {
+    if (!raw) return null;
+    if (typeof raw === 'object') return raw;
+    try { return JSON.parse(raw); } catch { return null; }
+  }
+
   return (
     <>
       {/* Page Header */}
@@ -35,18 +42,19 @@ export default async function ReportsPage() {
           </div>
           <h3 className="text-[20px] font-semibold mb-2 text-[#1E293B]">No Reports Yet</h3>
           <p className="text-[14px] text-[#64748B] max-w-md mx-auto mb-8 leading-relaxed">
-            Run your first audit to generate insights. Complete a vetting session with at least 3 interactions, then hit &quot;Run Due Diligence&quot;.
+            Complete a session with at least 3 messages, then click &quot;Generate Report&quot; inside the session.
           </p>
           <Link href="/dashboard" className="bg-indigo-500 hover:bg-indigo-600 text-white px-6 py-2.5 rounded-lg font-semibold text-[14px] transition-all duration-200 shadow-[0_4px_15px_rgba(99,102,241,0.2)] hover:shadow-[0_6px_20px_rgba(99,102,241,0.3)]">
-            Go to Idea Rooms
+            Go to Audit Sessions
           </Link>
         </div>
       ) : (
         <div className="space-y-3 stagger-children">
           {rooms.map((room) => {
-            const report = typeof room.report === 'string' ? JSON.parse(room.report) : room.report;
+            const report = safeParseReport(room.report);
+            if (!report) return null;
             return (
-              <Link key={room.roomId} href={`/dashboard/room/${room.roomId}`} className="block group">
+              <Link key={room.roomId} href={`/dashboard/reports/${room.roomId}`} className="block group">
                 <div className="glass-card rounded-2xl p-5 flex items-center gap-5 transition-all duration-200 card-glow">
                   <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
                     report.score >= 7 ? 'bg-green-50 border border-green-100' :

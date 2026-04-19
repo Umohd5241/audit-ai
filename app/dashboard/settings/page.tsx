@@ -1,7 +1,8 @@
 import { getSession } from '@/lib/auth';
 import { adminDb } from '@/lib/firebase-admin';
 import { redirect } from 'next/navigation';
-import { User, Phone, Mail, Key, Bell, Globe } from 'lucide-react';
+import { User, Phone, Mail, Key } from 'lucide-react';
+import SettingsManager from '@/components/SettingsManager';
 
 export default async function SettingsPage() {
   const session = await getSession();
@@ -50,55 +51,7 @@ export default async function SettingsPage() {
           </div>
         </div>
 
-        {/* Notifications */}
-        <div className="glass-card rounded-2xl p-6 card-glow">
-          <div className="flex items-center gap-3 mb-5">
-            <div className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-100 flex items-center justify-center">
-              <Bell className="w-4 h-4 text-amber-500" />
-            </div>
-            <h2 className="text-[15px] font-semibold text-[#1E293B]">Notifications</h2>
-          </div>
-          <div className="space-y-0">
-            {[
-              { label: 'WhatsApp Notifications', on: true },
-              { label: 'Email Notifications', on: false },
-            ].map((item, i) => (
-              <div key={i} className={`flex items-center justify-between py-3.5 ${i === 0 ? 'border-b border-[rgba(0,0,0,0.04)]' : ''}`}>
-                <span className="text-[13px] text-[#64748B]">{item.label}</span>
-                <div className={`w-10 h-[22px] rounded-full relative cursor-pointer transition-colors duration-200 ${item.on ? 'bg-indigo-500' : 'bg-[#E2E8F0]'}`}>
-                  <div className={`w-4 h-4 bg-white rounded-full absolute top-[3px] shadow-sm transition-all duration-200 ${item.on ? 'right-[3px]' : 'left-[3px]'}`} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Integrations */}
-        <div className="glass-card rounded-2xl p-6 card-glow">
-          <div className="flex items-center gap-3 mb-5">
-            <div className="w-8 h-8 rounded-lg bg-green-50 border border-green-100 flex items-center justify-center">
-              <Globe className="w-4 h-4 text-green-500" />
-            </div>
-            <h2 className="text-[15px] font-semibold text-[#1E293B]">Integrations</h2>
-          </div>
-          <div className="space-y-0">
-            {[
-              { name: 'WhatsApp', desc: 'Chat with THE EQUALS via WhatsApp' },
-              { name: 'Telegram', desc: 'Chat with THE EQUALS via Telegram' },
-            ].map((item, i) => (
-              <div key={i} className={`flex items-center justify-between py-3.5 ${i === 0 ? 'border-b border-[rgba(0,0,0,0.04)]' : ''}`}>
-                <div>
-                  <p className="text-[13px] font-medium text-[#1E293B]">{item.name}</p>
-                  <p className="text-[11px] text-[#94A3B8] mt-0.5">{item.desc}</p>
-                </div>
-                <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-green-50 text-green-600 border border-green-100 flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-500 pulse-dot" />
-                  Connected
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
+        <SettingsManager userId={session.userId} initialSettings={user || {}} />
       </div>
     </>
   );

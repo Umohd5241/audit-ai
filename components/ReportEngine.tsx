@@ -38,16 +38,19 @@ export default function ReportEngine({ roomId }: { roomId: string }) {
       const messagesData = await messagesRes.json();
       
       if (!messagesData.success || messagesData.messages.length < 3) {
-          throw new Error('Need at least 3 messages to generate a report.');
+          throw new Error('You need at least 3 messages in the session before generating a report.');
       }
 
       const chatContent = messagesData.messages.map((m: any) => `${m.sender.toUpperCase()}: ${m.content}`).join('\n\n');
 
-      const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
+      const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+      if (!apiKey) throw new Error('Report generation is unavailable. Please contact support.');
+
+      const ai = new GoogleGenAI({ apiKey });
       
       const response = await ai.models.generateContent({
         model: 'gemini-3.1-pro-preview',
-        contents: [{ role: 'user', parts: [{ text: `Generate due diligence for this idea room session:\n\n${chatContent}` }] }],
+        contents: [{ role: 'user', parts: [{ text: `Generate due diligence for this Audit Session:\n\n${chatContent}` }] }],
         config: {
             systemInstruction: REPORT_INSTRUCTION,
             responseMimeType: "application/json",
@@ -56,9 +59,17 @@ export default function ReportEngine({ roomId }: { roomId: string }) {
       });
 
       const aiText = response.text;
-      if (!aiText) throw new Error("Failed to generate report.");
-      
-      const reportJson = JSON.parse(aiText);
+      if (!aiText) throw new Error('Failed to generate report: empty response.');
+
+      // Strip markdown fences the model may wrap around JSON
+      const cleaned = aiText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+
+      let reportJson: any;
+      try {
+        reportJson = JSON.parse(cleaned);
+      } catch {
+        throw new Error('Report generation failed. Please try again.');
+      }
 
       const saveRes = await fetch(`/api/rooms/${roomId}/report`, { 
         method: 'POST',
@@ -66,7 +77,7 @@ export default function ReportEngine({ roomId }: { roomId: string }) {
         body: JSON.stringify({ reportJson })
       });
       
-      if (!saveRes.ok) throw new Error("Failed to save report.");
+      if (!saveRes.ok) throw new Error('Report was generated but could not be saved. Please try again.');
 
       setReport(reportJson);
     } catch (err: any) {
@@ -86,13 +97,13 @@ export default function ReportEngine({ roomId }: { roomId: string }) {
 
   return (
     <div className="flex flex-col">
-      <h3 className="text-[12px] font-bold uppercase tracking-widest text-[#94A3B8] mb-4">DD Report</h3>
+      <h3 className="text-[12px] font-bold uppercase tracking-widest text-[#94A3B8] mb-4">Audit Report</h3>
 
       {!report ? (
         <div className="text-center py-6">
           <ShieldAlert className="w-8 h-8 text-[#CBD5E1] mx-auto mb-3" />
           <p className="text-[12px] text-[#94A3B8] leading-relaxed mb-4">
-            Chat with the panel to generate your due diligence report.
+            Chat with the AI panel first, then click below to generate your report.
           </p>
         </div>
       ) : (
@@ -162,7 +173,7 @@ export default function ReportEngine({ roomId }: { roomId: string }) {
         className="w-full bg-indigo-500 hover:bg-indigo-600 text-white py-3 rounded-xl font-semibold text-[12px] uppercase tracking-wider transition shadow-[0_4px_12px_rgba(99,102,241,0.15)] disabled:opacity-50 flex items-center justify-center gap-2"
       >
         {generating ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Presentation className="w-3.5 h-3.5" />}
-        {report ? 'Recalculate' : 'Run Due Diligence'}
+        {report ? 'Regenerate Report' : 'Generate Report'}
       </button>
     </div>
   );

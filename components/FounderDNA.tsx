@@ -291,7 +291,7 @@ export default function FounderDNA({ roomId, messageCount = 0 }: { roomId: strin
         ) : (
           <div className="flex items-start gap-2 text-[11px] text-[#94A3B8] italic">
             <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-            <span>{metrics.totalMessages > 0 ? 'Analyzing conversation...' : 'Start chatting to generate insights.'}</span>
+            <span>{metrics.totalMessages > 0 ? 'Building your assessment…' : 'Type a message to start your session.'}</span>
           </div>
         )}
       </div>

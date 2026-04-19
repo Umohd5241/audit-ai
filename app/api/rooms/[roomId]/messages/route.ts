@@ -12,7 +12,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ roomId: 
     }
 
     if (!adminDb) {
-      throw new Error('Firebase Admin SDK is not properly initialized. Check environment variables.');
+      return NextResponse.json({ error: 'Service unavailable' }, { status: 503 });
     }
 
     const roomDoc = await adminDb.collection('ideaRooms').doc(roomId).get();
