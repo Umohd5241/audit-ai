@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Rocket, Loader2 } from 'lucide-react';
 import { auth } from '@/lib/firebase';
@@ -13,7 +12,6 @@ export default function SignupPage() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,16 +19,6 @@ export default function SignupPage() {
     setLoading(true);
 
     try {
-      if (!process.env.NEXT_PUBLIC_FIREBASE_API_KEY || !auth) {
-        throw new Error('configuration-missing');
-      }
-
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const idToken = await userCredential.user.getIdToken();
-
-      const res = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ idToken, email, phoneNumber }),
       });
 
@@ -52,6 +40,8 @@ export default function SignupPage() {
         setError('Connection failed. Please check your internet connection and try again.');
       } else if (code === 'auth/too-many-requests') {
         setError('Too many attempts. Please wait a moment and try again.');
+      } else if (err.message === 'configuration-missing') {
+        setError('Authentication is not fully configured. Please contact the administrator.');
       } else if (err.message?.includes('register') || err.message?.includes('database')) {
         setError('Account created but profile setup failed. Please try logging in.');
       } else if (code === 'auth/configuration-not-found' || code === 'auth/unauthorized-domain') {

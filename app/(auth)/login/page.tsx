@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Rocket, Loader2 } from 'lucide-react';
 import { auth } from '@/lib/firebase';
@@ -12,7 +11,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,16 +18,6 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      if (!process.env.NEXT_PUBLIC_FIREBASE_API_KEY || !auth) {
-        throw new Error('configuration-missing');
-      }
-
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const idToken = await userCredential.user.getIdToken();
-
-      const res = await fetch('/api/auth/session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ idToken })
       });
 
@@ -49,6 +37,8 @@ export default function LoginPage() {
         setError('Connection failed. Please check your internet connection and try again.');
       } else if (code === 'auth/user-disabled') {
         setError('This account has been disabled. Please contact support.');
+      } else if (err.message === 'configuration-missing') {
+        setError('Authentication is not fully configured. Please contact the administrator.');
       } else if (err.message?.includes('server session') || err.message?.includes('Firebase Admin')) {
         setError('Something went wrong on our end. Please try again in a moment.');
       } else if (code === 'auth/configuration-not-found' || code === 'auth/unauthorized-domain') {

@@ -29,13 +29,14 @@ A premium AI-powered due diligence platform designed specifically for founders. 
    ```
 
 ## Environment Variables
-Refer to `.env.example`. This application requires a valid `NEXT_PUBLIC_GEMINI_API_KEY` to function alongside a standard Firebase Admin SDK matrix.
+Refer to `.env.example`. For authentication to work in local and Vercel, set the full Firebase client set (`NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`, `NEXT_PUBLIC_FIREBASE_PROJECT_ID`, `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`, `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`, `NEXT_PUBLIC_FIREBASE_APP_ID`) and the Firebase Admin set (`FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`).
 
 ## Deployment Steps (Vercel)
 1. Push to GitHub.
 2. Import project in Vercel.
 3. Configure all parameters outlined in `.env.example` in Vercel's Environment Variables panel.
-4. Deploy.
+4. If you use a custom domain, add it in Firebase Console -> Authentication -> Settings -> Authorized domains.
+5. Redeploy after any Vercel environment variable changes so the client bundle gets rebuilt with updated `NEXT_PUBLIC_*` values.
 
 ## Live Demo
 [Insert Production Vercel Link Here]
