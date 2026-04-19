@@ -281,4 +281,6 @@ export default function SettingsManager({
           ))}
         </div>
       </div>
-
+    </>
+  );
+}
