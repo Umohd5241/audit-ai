@@ -11,25 +11,33 @@ export default async function DashboardPage() {
   if (!session) redirect('/login');
   
   if (!adminDb) {
-    throw new Error('Firebase Admin SDK is not properly initialized.');
+    console.error('Firebase Admin SDK is not properly initialized.');
   }
 
-  // Single parallel fetch: user + rooms
-  const [userDoc, roomsSnapshot] = await Promise.all([
-    adminDb.collection('users').doc(session.userId).get(),
-    adminDb.collection('ideaRooms').where('userId', '==', session.userId).get()
-  ]);
+  let user = null;
+  let rooms: any[] = [];
   
-  const user = userDoc.data();
-  const firstName = user?.email?.split('@')[0] || 'User';
+  try {
+    const [userDoc, roomsSnapshot] = await Promise.all([
+      adminDb.collection('users').doc(session.userId).get(),
+      adminDb.collection('ideaRooms').where('userId', '==', session.userId).get()
+    ]);
+    
+    user = userDoc.data();
+    rooms = roomsSnapshot.docs
+      .map(doc => {
+        const data = doc.data() as any;
+        return { ...data, messageCount: data.messageCount || 0 };
+      })
+      .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  } catch (error: any) {
+    console.error('Firestore error in DashboardPage:', error);
+    // Suppress crash - show empty state or local fallback
+    user = user || { email: session.email };
+    rooms = rooms || [];
+  }
 
-  // Map rooms directly — skip expensive N+1 message count queries
-  const rooms = roomsSnapshot.docs
-    .map(doc => {
-      const data = doc.data() as any;
-      return { ...data, messageCount: data.messageCount || 0 };
-    })
-    .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const firstName = user?.email?.split('@')[0] || 'User';
 
   return (
     <>

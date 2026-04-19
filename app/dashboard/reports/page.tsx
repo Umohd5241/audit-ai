@@ -9,16 +9,22 @@ export default async function ReportsPage() {
   if (!session) redirect('/login');
 
   if (!adminDb) {
-    throw new Error('Firebase Admin SDK is not properly initialized.');
+    console.error('Firebase Admin SDK is not properly initialized.');
   }
 
-  const roomsSnapshot = await adminDb.collection('ideaRooms')
-    .where('userId', '==', session.userId)
-    .get();
+  let rooms: any[] = [];
+  try {
+    const roomsSnapshot = await adminDb.collection('ideaRooms')
+      .where('userId', '==', session.userId)
+      .get();
 
-  const rooms = roomsSnapshot.docs
-    .map(doc => doc.data() as any)
-    .filter(room => room.report);
+    rooms = roomsSnapshot.docs
+      .map(doc => doc.data() as any)
+      .filter(room => room.report);
+  } catch (error: any) {
+    console.error('Firestore error in ReportsPage:', error);
+    // Gracefully handle failure and show empty state
+  }
 
   // Safely parse report — may be a JSON string or already an object
   function safeParseReport(raw: any): any {

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase-admin';
-import { GoogleGenAI } from '@google/genai';
+import { getGroqClient, GROQ_MODEL, formatHistoryForGroq } from '@/lib/ai-client';
 import { v4 as uuidv4 } from 'uuid';
 import { CHAT_INSTRUCTIONS } from '@/lib/ai-config';
 
@@ -69,35 +69,34 @@ export async function POST(req: Request) {
         timestamp: new Date().toISOString()
     });
 
-    // Generate AI response
-    const roomDoc = await adminDb.collection('ideaRooms').doc(roomId).get();
-    const roomData = roomDoc.data();
-
-    const historySnapshot = await adminDb.collection('ideaRooms').doc(roomId).collection('messages')
-        .orderBy('timestamp', 'asc')
-        .limit(15)
-        .get();
+    let aiText = "";
+    try {
+        const groq = getGroqClient();
         
-    const history = historySnapshot.docs.map(doc => ({
-        role: doc.data().sender === 'user' ? 'user' : 'model',
-        parts: [{ text: doc.data().content }]
-    }));
+        const historySnapshot = await adminDb.collection('ideaRooms').doc(roomId).collection('messages')
+            .orderBy('timestamp', 'asc')
+            .limit(10)
+            .get();
+            
+        const history = historySnapshot.docs.map(doc => doc.data());
 
-    const modelName = 'gemini-2.0-flash';
-    const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-    if (!apiKey) throw new Error('API Configuration Missing: Please set Gemini API Key.');
-    
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ 
-        model: modelName,
-        systemInstruction: `${CHAT_INSTRUCTIONS}\n\nEvaluating Room: ${roomData?.ideaName}. Description: ${roomData?.description}.`
-    });
+        const messages = [
+            { role: 'system', content: CHAT_INSTRUCTIONS },
+            ...formatHistoryForGroq(history),
+            { role: 'user', content: text }
+        ];
 
-    const result = await model.generateContent({
-        contents: history as any,
-    });
-    
-    const aiText = result.response.text() || "The Audit Panel is temporarily silent. Please re-state your assumption.";
+        const completion = await groq.chat.completions.create({
+            model: GROQ_MODEL,
+            messages: messages as any,
+            temperature: 0.2,
+        });
+        
+        aiText = completion.choices[0]?.message?.content || "The Audit Panel is silent.";
+    } catch (e: any) {
+        console.error("Groq Telegram Error:", e);
+        aiText = "The Audit Panel is currently facing technical difficulties. Please retry.";
+    }
 
     // Log AI Message
     const aiMsgId = uuidv4();

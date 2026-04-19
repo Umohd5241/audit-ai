@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase-admin';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { getGroqClient, GROQ_MODEL, formatHistoryForGroq } from '@/lib/ai-client';
 import { v4 as uuidv4 } from 'uuid';
 import { CHAT_INSTRUCTIONS } from '@/lib/ai-config';
 
@@ -107,21 +107,34 @@ export async function POST(req: Request) {
         parts: [{ text: doc.data().content }]
     }));
 
-    const modelName = 'gemini-2.0-flash';
-    const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-    if (!apiKey) throw new Error('API Configuration Missing.');
-    
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ 
-        model: modelName,
-        systemInstruction: `${CHAT_INSTRUCTIONS}\n\nEvaluating Idea Room: ${roomData?.ideaName}. Description: ${roomData?.description}.`
-    });
+    let aiText = "";
+    try {
+        const groq = getGroqClient();
 
-    const result = await model.generateContent({
-        contents: history as any,
-    });
-    
-    const aiText = result.response.text() || "The Audit Panel is currently locked in debate. Please re-submit your assumption.";
+        const historySnapshot = await adminDb.collection('ideaRooms').doc(roomId).collection('messages')
+            .orderBy('timestamp', 'asc')
+            .limit(10)
+            .get();
+            
+        const history = historySnapshot.docs.map(doc => doc.data());
+
+        const messages = [
+            { role: 'system', content: `${CHAT_INSTRUCTIONS}\n\nEvaluating Idea Room: ${roomData?.ideaName}. Description: ${roomData?.description}.` },
+            ...formatHistoryForGroq(history),
+            { role: 'user', content: body }
+        ];
+
+        const completion = await groq.chat.completions.create({
+            model: GROQ_MODEL,
+            messages: messages as any,
+            temperature: 0.2,
+        });
+        
+        aiText = completion.choices[0]?.message?.content || "The Audit Panel is temporarily silent.";
+    } catch (e: any) {
+        console.error("Groq Meta Error:", e);
+        aiText = "The Audit Panel is currently facing technical difficulties. Please retry.";
+    }
 
     // Log AI Message
     const aiMsgId = uuidv4();

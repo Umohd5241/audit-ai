@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import { adminDb } from '@/lib/firebase-admin';
-import { GoogleGenAI } from '@google/genai';
+import { getGroqClient, GROQ_MODEL, formatHistoryForGroq } from '@/lib/ai-client';
 import twilio from 'twilio';
 import { CHAT_INSTRUCTIONS } from '@/lib/ai-config';
 
@@ -194,42 +194,38 @@ export async function POST(req: Request) {
 
     let aiResponseText = "";
 
-    // Check if AI (Gemini) is integrated/configured
-    if (!process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
+    // Check if AI (Groq) is integrated/configured
+    if (!process.env.GROQ_API_KEY) {
       aiResponseText = `Your message received: ${body}`;
     } else {
-      try {
-          const messagesSnapshot = await adminDb.collection('ideaRooms').doc(roomId).collection('messages')
-              .orderBy('timestamp', 'desc')
-              .limit(10)
-              .get();
+        try {
+              const groq = getGroqClient();
 
-          const history = messagesSnapshot.docs.map(doc => doc.data());
-          history.reverse(); 
+              const messagesSnapshot = await adminDb.collection('ideaRooms').doc(roomId).collection('messages')
+                  .orderBy('timestamp', 'desc')
+                  .limit(10)
+                  .get();
 
-          const chatContents = history.map(h => ({
-              role: h.sender === 'user' ? 'user' : 'model',
-              parts: [{ text: h.content }]
-          }));
-          
-          const modelName = 'gemini-2.0-flash';
-          const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-          if (!apiKey) throw new Error('API Configuration Missing.');
-          
-          const genAI = new GoogleGenerativeAI(apiKey);
-          const model = genAI.getGenerativeModel({ 
-              model: modelName,
-              systemInstruction: CHAT_INSTRUCTIONS
-          });
+              const history = messagesSnapshot.docs.map(doc => doc.data());
+              history.reverse(); 
 
-          const result = await model.generateContent({
-              contents: chatContents as any,
-          });
-          aiResponseText = result.response.text() || "The Audit Panel is currently reviewing your pitch in silence. Please provide more detail.";
-      } catch (e) {
-          console.error("Gemini Error:", e);
-          aiResponseText = "There was an error communicating with the AI panel. Please try again.";
-      }
+              const messages = [
+                  { role: 'system', content: CHAT_INSTRUCTIONS },
+                  ...formatHistoryForGroq(history),
+                  { role: 'user', content: body }
+              ];
+
+              const completion = await groq.chat.completions.create({
+                  model: GROQ_MODEL,
+                  messages: messages as any,
+                  temperature: 0.2,
+              });
+              
+              aiResponseText = completion.choices[0]?.message?.content || "The Audit Panel is temporarily silent.";
+          } catch (e: any) {
+              console.error("Groq WhatsApp Error:", e);
+              aiResponseText = "There was an error communicating with the AI panel. Please try again.";
+          }
     }
 
     // Save AI response to database

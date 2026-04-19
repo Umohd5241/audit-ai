@@ -15,14 +15,23 @@ export default async function RoomPage({ params }: { params: Promise<{ id: strin
   if (!session?.userId) redirect('/login');
 
   if (!adminDb) {
-    throw new Error('Firebase Admin SDK is not properly initialized. Check environment variables.');
+    console.error('Firebase Admin SDK is not properly initialized. Check environment variables.');
   }
 
-  // Single fetch — room doc already has messageCount
-  const roomDoc = await adminDb.collection('ideaRooms').doc(id).get();
-  if (!roomDoc.exists) redirect('/dashboard');
-  
-  const room = roomDoc.data()!;
+  let room = null;
+  try {
+    const roomDoc = await adminDb.collection('ideaRooms').doc(id).get();
+    if (!roomDoc.exists) redirect('/dashboard');
+    room = roomDoc.data()!;
+  } catch (error: any) {
+    console.error('Firestore error in RoomPage:', error);
+    if (error.code === 8 || (error.message && error.message.includes('Quota exceeded'))) {
+      // Minimal mock room
+      room = { ideaName: 'Audit Session (View Only)', userId: session.userId, description: 'You have reached your Firebase quota limits. High-stakes analysis requires more compute credits.' };
+    } else {
+      throw error;
+    }
+  }
   if (room.userId !== session.userId) redirect('/dashboard');
 
   const messageCount = room.messageCount || 0;

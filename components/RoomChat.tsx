@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import Markdown from 'react-markdown';
 import { RefreshCw, Send, ShieldAlert, AlertTriangle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { getGroqClient, GROQ_MODEL } from '@/lib/ai-client';
 import { parseDecision } from '@/lib/decision-parser';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -202,18 +202,20 @@ export default function RoomChat({ roomId }: { roomId: string }) {
   const runReflectionAsync = async (fullText: string, msgId: string) => {
     setReflecting(true);
     try {
-      const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-      if (!apiKey) throw new Error('API Key missing.');
-
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+      const groq = getGroqClient();
 
       const prompt = `Analyze the following AI output and verify if it provides these sections: DECISION, Executive Verdict, Why This May Fail, Key Risks to Address, What Needs to Change?
       Output: """${fullText}"""
-      Respond ONLY with: {"completed":true/false,"missing":"sections here","confidence":0-100}`;
+      Respond ONLY with a raw JSON object: {"completed":true/false,"missing":"sections here","confidence":0-100}`;
 
-      const result = await model.generateContent(prompt);
-      const raw = result.response.text().replace(/```json/gi, '').replace(/```/g, '').trim();
+      const completion = await groq.chat.completions.create({
+        model: GROQ_MODEL,
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.1,
+        response_format: { type: "json_object" }
+      });
+
+      const raw = completion.choices[0]?.message?.content || '';
 
       if (activeMessageIdRef.current !== msgId) return;
 

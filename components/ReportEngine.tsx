@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { Loader2, FileText, CheckCircle2, AlertTriangle, Presentation, TrendingUp, ShieldAlert, BarChart3, RefreshCw } from 'lucide-react';
-import { GoogleGenAI } from '@google/genai';
+import { getGroqClient, GROQ_MODEL } from '@/lib/ai-client';
 import { REPORT_INSTRUCTION } from '@/lib/ai-config';
 
 export default function ReportEngine({ roomId }: { roomId: string }) {
@@ -43,22 +43,21 @@ export default function ReportEngine({ roomId }: { roomId: string }) {
 
       const chatContent = messagesData.messages.map((m: any) => `${m.sender.toUpperCase()}: ${m.content}`).join('\n\n');
 
-      const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-      if (!apiKey) throw new Error('API Key missing.');
-
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ 
-          model: 'gemini-2.0-flash',
-          systemInstruction: REPORT_INSTRUCTION,
-          generationConfig: {
-              responseMimeType: "application/json",
-              temperature: 0.1
-          }
-      });
+      const groq = getGroqClient();
 
       const prompt = `Generate due diligence for this Audit Session:\n\n${chatContent}`;
-      const result = await model.generateContent(prompt);
-      const aiText = result.response.text();
+      
+      const completion = await groq.chat.completions.create({
+          model: GROQ_MODEL,
+          messages: [
+            { role: 'system', content: REPORT_INSTRUCTION },
+            { role: 'user', content: prompt }
+          ],
+          temperature: 0.1,
+          response_format: { type: "json_object" }
+      });
+      
+      const aiText = completion.choices[0]?.message?.content || '';
       
       if (!aiText) throw new Error('Failed to generate report: empty response.');
 

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase-admin';
 import { getSession } from '@/lib/auth';
 import { v4 as uuidv4 } from 'uuid';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { getGroqClient, GROQ_MODEL, formatHistoryForGroq } from '@/lib/ai-client';
 import { FieldValue } from 'firebase-admin/firestore';
 import { parseDecision } from '@/lib/decision-parser';
 
@@ -86,15 +86,8 @@ export async function POST(
     let inferenceError = false;
 
     try {
-      const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-      if (!apiKey) throw new Error('API Configuration Missing: Please set your Gemini API Key in Vercel settings.');
-
-      const genAI = new GoogleGenerativeAI(apiKey);
+      const groq = getGroqClient();
       
-      // LOG FINGERPRINT: Masked key for verification
-      const fingerprint = `${apiKey.slice(0, 6)}...${apiKey.slice(-4)}`;
-      console.log(`[chat/route] Using API Key Fingerprint: ${fingerprint}`);
-
       const systemInstruction = `YOU ARE A RUTHLESS, HIGHLY ANALYTICAL DUE DILIGENCE AUDIT ENGINE.
 YOUR SOLE PURPOSE IS TO STRESS-TEST STARTUP IDEAS.
 
@@ -123,30 +116,26 @@ Description: ${roomContext?.description ?? 'No description provided'}
 
 Be concise and direct. Responses should be under 200 words.`.trim();
 
-      const model = genAI.getGenerativeModel({ 
-        model: 'gemini-2.0-flash',
-        systemInstruction,
-        safetySettings: [
-          { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
-          { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
-          { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
-          { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
-        ],
-      });
-
-      // Simple prompt for now - history support can be added if needed
-      const prompt = message.trim();
+      const messages = [
+        { role: 'system', content: systemInstruction },
+        ...formatHistoryForGroq(safeHistory),
+        { role: 'user', content: message.trim() }
+      ];
 
       const timeoutMs = 55_000;
-      const inferencePromise = model.generateContent(prompt);
+      const inferencePromise = groq.chat.completions.create({
+        model: GROQ_MODEL,
+        messages: messages as any,
+        temperature: 0.2,
+        max_tokens: 1024,
+      });
 
       const timeoutPromise = new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error('AI inference timed out after 55 seconds')), timeoutMs)
       );
 
-      const result = await Promise.race([inferencePromise, timeoutPromise]);
-      const response = await (result as any).response;
-      aiResponse = response.text();
+      const completion = await Promise.race([inferencePromise, timeoutPromise]);
+      aiResponse = completion.choices[0]?.message?.content || '';
 
       if (!aiResponse.trim()) {
         throw new Error('AI returned an empty response');
@@ -157,9 +146,8 @@ Be concise and direct. Responses should be under 200 words.`.trim();
     } catch (aiError: any) {
       inferenceError = true;
       const errorMessage = aiError?.message || aiError?.toString() || 'Unknown AI Error';
-      console.error('[chat/route] AI inference error:', errorMessage);
+      console.error('[chat/route] Groq inference error:', errorMessage);
       
-      // DURING DEBUG: Return the actual error to the UI so we can see it
       aiResponse = `The audit could not be completed: ${errorMessage}`;
       parsedDecision = 'ERROR';
     }

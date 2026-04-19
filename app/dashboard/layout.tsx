@@ -10,11 +10,18 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (!session) redirect('/login');
   
   if (!adminDb) {
-    throw new Error('Firebase Admin SDK is not properly initialized. Check environment variables.');
+    console.error('Firebase Admin SDK is not properly initialized. Check environment variables.');
   }
 
-  const userDoc = await adminDb.collection('users').doc(session.userId).get();
-  const user = userDoc.exists ? userDoc.data() : null;
+  let user = null;
+  try {
+    const userDoc = await adminDb.collection('users').doc(session.userId).get();
+    user = userDoc.exists ? userDoc.data() : null;
+  } catch (error: any) {
+    console.error('Firestore error in DashboardLayout:', error);
+    // Generic fallback for any database error to prevent total app crash
+    user = { email: session.email, phoneNumber: 'Data temporarily unavailable' };
+  }
 
   return (
     <div className="flex h-screen bg-[#F7F8FA] text-[#1E293B] font-sans overflow-hidden w-full">
