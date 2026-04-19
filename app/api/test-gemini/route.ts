@@ -9,6 +9,8 @@ export async function GET() {
     
     const result = await model.generateContent("Hello, are you working?");
     const response = await result.response;
+    // const session = await getSession();
+    // if (!session?.userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const text = response.text();
     
     return NextResponse.json({ 
