@@ -12,8 +12,15 @@ export default async function SettingsPage() {
     throw new Error('Firebase Admin SDK is not properly initialized.');
   }
 
-  const userDoc = await adminDb.collection('users').doc(session.userId).get();
-  const user = userDoc.exists ? userDoc.data() : null;
+  let user = null;
+  try {
+    const userDoc = await adminDb.collection('users').doc(session.userId).get();
+    user = userDoc.exists ? userDoc.data() : null;
+  } catch (error: any) {
+    console.warn('Suppressing Firebase Quota Exhausted crash on Settings page');
+    user = { email: session.email };
+  }
+
 
   return (
     <>

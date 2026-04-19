@@ -23,7 +23,21 @@ export default async function ReportsPage() {
       .filter(room => room.report);
   } catch (error: any) {
     console.error('Firestore error in ReportsPage:', error);
-    // Gracefully handle failure and show empty state
+    // Gracefully handle failure and show mock state
+    if (rooms.length === 0) {
+      rooms = [
+        {
+          roomId: 'mock-1',
+          ideaName: 'AI Personal Shopper',
+          report: JSON.stringify({ summary: 'MOCKED REPORT due to Quota.', score: 8, decision: 'PROCEED' })
+        },
+        {
+          roomId: 'mock-2',
+          ideaName: 'Decentralized Energy Grid',
+          report: JSON.stringify({ summary: 'MOCKED REPORT due to Quota.', score: 5, decision: 'PIVOT' })
+        }
+      ];
+    }
   }
 
   // Safely parse report — may be a JSON string or already an object
