@@ -1,20 +1,28 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# THE EQUALS - AI Startup Validation Platform
 
-# Run and deploy your AI Studio app
+Welcome to the internal testing environment for THE EQUALS startup validation application. 
 
-This contains everything you need to run your app locally.
-
-View your app in AI Studio: https://ai.studio/apps/eca8de6b-26d9-45f5-8dfd-d8090d689eb1
+This repository contains the Next.js standard front-end, Firebase Admin integration, and the Gemini AI-powered auditing engines.
 
 ## Run Locally
 
-**Prerequisites:**  Node.js
-
+**Prerequisites:** Node.js (v18+)
 
 1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+   ```bash
+   npm install
+   ```
+2. Set the environment variables in `.env.local` (Firebase keys, `GEMINI_API_KEY`).
+3. Run the development server:
+   ```bash
+   npm run dev
+   ```
+4. Open [http://localhost:3000](http://localhost:3000)
+
+## Features
+- Interactive AI Mentor Dashboard
+- Real-Time "Founder DNA" Analytics
+- Automated Due Diligence Reports
+- Light-theme optimized UI
+
+_Built by **THE EQUALS** team._
