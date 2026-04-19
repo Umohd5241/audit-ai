@@ -90,6 +90,10 @@ export async function POST(
       if (!apiKey) throw new Error('GEMINI_API_KEY environment variable not set');
 
       const genAI = new GoogleGenerativeAI(apiKey);
+      
+      // LOG FINGERPRINT: Masked key for verification
+      const fingerprint = `${apiKey.slice(0, 6)}...${apiKey.slice(-4)}`;
+      console.log(`[chat/route] Using API Key Fingerprint: ${fingerprint}`);
 
       const systemInstruction = `YOU ARE A RUTHLESS, HIGHLY ANALYTICAL DUE DILIGENCE AUDIT ENGINE.
 YOUR SOLE PURPOSE IS TO STRESS-TEST STARTUP IDEAS.
@@ -122,6 +126,12 @@ Be concise and direct. Responses should be under 200 words.`.trim();
       const model = genAI.getGenerativeModel({ 
         model: 'gemini-1.5-flash',
         systemInstruction,
+        safetySettings: [
+          { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+          { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+          { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+          { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
+        ],
       });
 
       // Simple prompt for now - history support can be added if needed
@@ -146,9 +156,11 @@ Be concise and direct. Responses should be under 200 words.`.trim();
 
     } catch (aiError: any) {
       inferenceError = true;
-      console.error('[chat/route] AI inference error:', aiError?.message ?? aiError);
-      aiResponse =
-        'The audit could not be completed due to processing constraints. Please retry.';
+      const errorMessage = aiError?.message || aiError?.toString() || 'Unknown AI Error';
+      console.error('[chat/route] AI inference error:', errorMessage);
+      
+      // DURING DEBUG: Return the actual error to the UI so we can see it
+      aiResponse = `The audit could not be completed: ${errorMessage}`;
       parsedDecision = 'ERROR';
     }
 
