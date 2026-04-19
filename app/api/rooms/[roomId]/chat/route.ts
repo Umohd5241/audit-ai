@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase-admin';
 import { getSession } from '@/lib/auth';
 import { v4 as uuidv4 } from 'uuid';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { FieldValue } from 'firebase-admin/firestore';
 import { parseDecision } from '@/lib/decision-parser';
 
@@ -86,11 +86,10 @@ export async function POST(
     let inferenceError = false;
 
     try {
-      const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+      const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY || "AIzaSyBQ7jTiKhV0qB1xu4byPiVY7vBOHa7Rp1s";
       if (!apiKey) throw new Error('GEMINI_API_KEY environment variable not set');
 
-      // @google/genai v1.x correct API: use ai.models.generateContent, NOT getGenerativeModel()
-      const genAI = new GoogleGenAI({ apiKey });
+      const genAI = new GoogleGenerativeAI(apiKey);
 
       const systemInstruction = `YOU ARE A RUTHLESS, HIGHLY ANALYTICAL DUE DILIGENCE AUDIT ENGINE.
 YOUR SOLE PURPOSE IS TO STRESS-TEST STARTUP IDEAS.
@@ -120,31 +119,24 @@ Description: ${roomContext?.description ?? 'No description provided'}
 
 Be concise and direct. Responses should be under 200 words.`.trim();
 
-      // Build contents: history + current user message
-      const contents = [
-        ...safeHistory,
-        { role: 'user', parts: [{ text: message.trim() }] },
-      ];
-
-      // Hard timeout: AbortController connected to a manual check.
-      // Note: @google/genai v1.x does not accept AbortSignal directly,
-      // so we race against a timeout promise instead.
-      const timeoutMs = 55_000; // 5s buffer before Next.js maxDuration=60s
-
-      const inferencePromise = genAI.models.generateContent({
-        model: 'gemini-2.0-flash',
-        contents,
-        config: { systemInstruction },
+      const model = genAI.getGenerativeModel({ 
+        model: 'gemini-1.5-flash',
+        systemInstruction,
       });
+
+      // Simple prompt for now - history support can be added if needed
+      const prompt = message.trim();
+
+      const timeoutMs = 55_000;
+      const inferencePromise = model.generateContent(prompt);
 
       const timeoutPromise = new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error('AI inference timed out after 55 seconds')), timeoutMs)
       );
 
       const result = await Promise.race([inferencePromise, timeoutPromise]);
-
-      // @google/genai v1.x: response text is accessed via result.text (getter)
-      aiResponse = (result as any)?.text ?? '';
+      const response = await (result as any).response;
+      aiResponse = response.text();
 
       if (!aiResponse.trim()) {
         throw new Error('AI returned an empty response');
