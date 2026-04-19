@@ -86,8 +86,8 @@ export async function POST(
     let inferenceError = false;
 
     try {
-      const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY || "AIzaSyBQ7jTiKhV0qB1xu4byPiVY7vBOHa7Rp1s";
-      if (!apiKey) throw new Error('GEMINI_API_KEY environment variable not set');
+      const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+      if (!apiKey) throw new Error('API Configuration Missing: Please set your Gemini API Key in Vercel settings.');
 
       const genAI = new GoogleGenerativeAI(apiKey);
       

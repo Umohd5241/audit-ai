@@ -202,8 +202,8 @@ export default function RoomChat({ roomId }: { roomId: string }) {
   const runReflectionAsync = async (fullText: string, msgId: string) => {
     setReflecting(true);
     try {
-      const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || "AIzaSyBQ7jTiKhV0qB1xu4byPiVY7vBOHa7Rp1s";
-      if (!apiKey) throw new Error('Reflector skipped: No key.');
+      const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+      if (!apiKey) throw new Error('API Key missing.');
 
       const genAI = new GoogleGenerativeAI(apiKey);
       const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });

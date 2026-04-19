@@ -43,8 +43,8 @@ export default function ReportEngine({ roomId }: { roomId: string }) {
 
       const chatContent = messagesData.messages.map((m: any) => `${m.sender.toUpperCase()}: ${m.content}`).join('\n\n');
 
-      const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || "AIzaSyBQ7jTiKhV0qB1xu4byPiVY7vBOHa7Rp1s";
-      if (!apiKey) throw new Error('Report generation is unavailable. Please contact support.');
+      const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+      if (!apiKey) throw new Error('API Key missing.');
 
       const genAI = new GoogleGenerativeAI(apiKey);
       const model = genAI.getGenerativeModel({ 
