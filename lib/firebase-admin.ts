@@ -1,12 +1,20 @@
 import * as admin from 'firebase-admin';
 
+const getEnv = (key: string | undefined, fallback: string): string => {
+  if (!key || key === 'undefined' || key === 'null' || key.trim() === '') {
+    return fallback;
+  }
+  return key;
+};
+
 let app: admin.app.App;
 try {
   if (!admin.apps.length) {
-      const projectId = process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'ai-startup-judge';
-      const clientEmail = process.env.FIREBASE_CLIENT_EMAIL || 'firebase-adminsdk-fbsvc@ai-startup-judge.iam.gserviceaccount.com';
-      const privateKey = process.env.FIREBASE_PRIVATE_KEY
-        ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n').replace(/"/g, '').trim()
+      const projectId = getEnv(process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID, 'ai-startup-judge');
+      const clientEmail = getEnv(process.env.FIREBASE_CLIENT_EMAIL, 'firebase-adminsdk-fbsvc@ai-startup-judge.iam.gserviceaccount.com');
+      const privateKeyEnv = process.env.FIREBASE_PRIVATE_KEY;
+      const privateKey = (privateKeyEnv && privateKeyEnv !== 'undefined' && privateKeyEnv !== 'null')
+        ? privateKeyEnv.replace(/\\n/g, '\n').replace(/"/g, '').trim()
         : undefined;
 
       if (projectId && clientEmail && privateKey) {
@@ -17,8 +25,6 @@ try {
             privateKey,
           }),
         });
-      } else {
-        console.warn('Firebase Admin skipped initialization due to missing credentials in build environment');
       }
   }
   app = admin.app();
