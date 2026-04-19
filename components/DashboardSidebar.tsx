@@ -13,7 +13,7 @@ const menuItems = [
   { name: 'Settings', href: '/dashboard/settings', icon: Settings, desc: 'Account preferences' },
 ];
 
-export default function DashboardSidebar({ phoneNumber }: { phoneNumber?: string }) {
+export default function DashboardSidebar({ displayName, phoneNumber }: { displayName?: string; phoneNumber?: string }) {
   const pathname = usePathname();
 
   const isActive = (href: string) => {
@@ -70,10 +70,15 @@ export default function DashboardSidebar({ phoneNumber }: { phoneNumber?: string
       <div className="h-px bg-[rgba(0,0,0,0.04)] my-4" />
 
       <div className="p-4 bg-gradient-to-br from-[#F8FAFC] to-[#F1F5F9] rounded-xl border border-[rgba(0,0,0,0.04)]">
-        <p className="text-[10px] text-[#94A3B8] font-semibold uppercase tracking-wider">WhatsApp</p>
+        <p className="text-[10px] text-[#94A3B8] font-semibold uppercase tracking-wider">Account</p>
         <p className="text-[13px] font-semibold mt-0.5 text-[#1E293B]">
-          {phoneNumber ? (phoneNumber.startsWith('+') ? phoneNumber : `+${phoneNumber}`) : '—'}
+          {displayName || '—'}
         </p>
+        {phoneNumber && (
+          <p className="text-[11px] text-[#94A3B8] mt-0.5">
+            {phoneNumber.startsWith('+') ? phoneNumber : `+${phoneNumber}`}
+          </p>
+        )}
         <div className="mt-3 pt-3 border-t border-[rgba(0,0,0,0.04)]">
           <LogoutButton />
         </div>

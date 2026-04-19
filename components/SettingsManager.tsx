@@ -2,7 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Bell, Globe, Grip, User, MessageSquare } from 'lucide-react';
+import { Bell, Globe, Grip, User, MessageSquare, CheckCircle, XCircle, AlertTriangle, Loader2 } from 'lucide-react';
+
+interface IntegrationStatus {
+  telegram: { configured: boolean; botUsername: string | null };
+  whatsapp: { configured: boolean; twilio: boolean; meta: boolean };
+}
 
 export default function SettingsManager({ 
   userId, 
@@ -20,6 +25,25 @@ export default function SettingsManager({
   const [telegramHandle, setTelegramHandle] = useState(initialSettings?.telegramHandle ?? '');
   const [saving, setSaving] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [saveError, setSaveError] = useState('');
+
+  // Real integration status from the backend
+  const [integrationStatus, setIntegrationStatus] = useState<IntegrationStatus | null>(null);
+  const [loadingIntegrations, setLoadingIntegrations] = useState(true);
+
+  // Check real backend integration status on mount
+  useEffect(() => {
+    fetch('/api/integrations/status')
+      .then(res => res.json())
+      .then(data => {
+        setIntegrationStatus(data);
+        setLoadingIntegrations(false);
+      })
+      .catch(() => {
+        setLoadingIntegrations(false);
+      });
+  }, []);
 
   useEffect(() => {
     if (highContrast) {
@@ -29,36 +53,36 @@ export default function SettingsManager({
     }
   }, [highContrast]);
 
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
-
   const saveSettings = async (updates: any) => {
     setSaving(true);
     setSaveStatus('idle');
+    setSaveError('');
     try {
       const res = await fetch('/api/user/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates),
       });
+      
+      const data = await res.json().catch(() => ({}));
+      
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'Failed to save settings');
+        throw new Error(data.error || `Save failed (HTTP ${res.status})`);
       }
       
+      if (!data.confirmed) {
+        throw new Error('Data was sent but could not be confirmed in the database.');
+      }
+
       setSaveStatus('success');
-      // Force a re-fetch of server data
       router.refresh();
       
-      // Secondary fallback to ensure sidebar/layout see the update
-      setTimeout(() => {
-        setSaveStatus('idle');
-      }, 3000);
-      
+      setTimeout(() => setSaveStatus('idle'), 4000);
       return true;
     } catch (err: any) {
-      console.error(err);
+      console.error('Save error:', err);
       setSaveStatus('error');
-      alert(err.message || 'Settings cannot be permanently saved due to Database Quota Exhaustion. They will revert on refresh.');
+      setSaveError(err.message || 'Unknown error');
       return false;
     } finally {
       setSaving(false);
@@ -76,17 +100,13 @@ export default function SettingsManager({
     setSavingProfile(false);
     
     if (success) {
-      // If the user name changed, let's force a reload after a short delay 
-      // to ensure the sidebar definitely sees it.
-      setTimeout(() => {
-        window.location.reload();
-      }, 500);
+      // Force full page reload to update sidebar + profile card from DB
+      setTimeout(() => window.location.reload(), 600);
     }
   };
 
   const toggleSetting = async (key: 'whatsappNotify' | 'emailNotify' | 'highContrast', currentValue: boolean) => {
     const newValue = !currentValue;
-    // Optimistic set
     if (key === 'whatsappNotify') setWhatsappNotify(newValue);
     if (key === 'emailNotify') setEmailNotify(newValue);
     if (key === 'highContrast') {
@@ -100,7 +120,6 @@ export default function SettingsManager({
     
     const success = await saveSettings({ [key]: newValue });
     if (!success) {
-      // Revert optimism if failed
       if (key === 'whatsappNotify') setWhatsappNotify(currentValue);
       if (key === 'emailNotify') setEmailNotify(currentValue);
       if (key === 'highContrast') {
@@ -122,8 +141,82 @@ export default function SettingsManager({
     }
   };
 
+  // Determine REAL integration connection status
+  const getWhatsAppStatus = () => {
+    if (loadingIntegrations) return 'loading';
+    if (!integrationStatus?.whatsapp?.configured) return 'not_configured';
+    if (!phoneNumber) return 'no_number';
+    return 'connected';
+  };
+
+  const getTelegramStatus = () => {
+    if (loadingIntegrations) return 'loading';
+    if (!integrationStatus?.telegram?.configured) return 'not_configured';
+    if (!telegramHandle) return 'no_handle';
+    return 'connected';
+  };
+
+  const renderStatusBadge = (status: string) => {
+    switch (status) {
+      case 'loading':
+        return (
+          <span className="text-[9px] font-bold uppercase tracking-tighter px-2 py-1 rounded bg-gray-100 text-gray-400 flex items-center gap-1">
+            <Loader2 className="w-2.5 h-2.5 animate-spin" />
+            Checking
+          </span>
+        );
+      case 'connected':
+        return (
+          <span className="text-[9px] font-black uppercase tracking-tighter px-2 py-0.5 rounded bg-green-500 text-white shadow-sm flex items-center gap-1">
+            <CheckCircle className="w-2.5 h-2.5" />
+            Connected
+          </span>
+        );
+      case 'not_configured':
+        return (
+          <span className="text-[9px] font-bold uppercase tracking-tighter px-2 py-1 rounded bg-red-50 text-red-500 border border-red-100 flex items-center gap-1">
+            <XCircle className="w-2.5 h-2.5" />
+            No Bot Token
+          </span>
+        );
+      case 'no_number':
+        return (
+          <button 
+            onClick={() => scrollToField('whatsappInput')}
+            className="text-[9px] font-bold uppercase tracking-tighter px-2 py-1 rounded bg-amber-50 text-amber-600 border border-amber-100 hover:bg-amber-100 transition flex items-center gap-1"
+          >
+            <AlertTriangle className="w-2.5 h-2.5" />
+            Add Number
+          </button>
+        );
+      case 'no_handle':
+        return (
+          <button 
+            onClick={() => scrollToField('telegramInput')}
+            className="text-[9px] font-bold uppercase tracking-tighter px-2 py-1 rounded bg-amber-50 text-amber-600 border border-amber-100 hover:bg-amber-100 transition flex items-center gap-1"
+          >
+            <AlertTriangle className="w-2.5 h-2.5" />
+            Add Handle
+          </button>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <>
+      {/* Save Status Banner */}
+      {saveStatus === 'error' && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
+          <XCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+          <div>
+            <p className="text-[13px] font-semibold text-red-700">Save Failed</p>
+            <p className="text-[11px] text-red-500 mt-0.5">{saveError}</p>
+          </div>
+        </div>
+      )}
+
       {/* Profile Section */}
       <div className="glass-card rounded-2xl p-6 card-glow">
         <div className="flex items-center gap-3 mb-6">
@@ -131,17 +224,22 @@ export default function SettingsManager({
               <User className="w-4 h-4 text-indigo-500" />
            </div>
            <h2 className="text-[15px] font-semibold text-[#1E293B]">Profile Information</h2>
+           {saveStatus === 'success' && (
+             <span className="ml-auto text-[11px] text-green-600 font-semibold flex items-center gap-1">
+               <CheckCircle className="w-3.5 h-3.5" /> Saved to Database
+             </span>
+           )}
         </div>
         <form onSubmit={handleProfileUpdate} className="space-y-5">
            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-[11px] font-bold text-[#64748B] mb-1.5 uppercase tracking-wider">Display Name</label>
+                <label className="block text-[11px] font-bold text-[#64748B] mb-1.5 uppercase tracking-wider">Full Name</label>
                 <input 
                   id="displayNameInput"
                   type="text" 
                   value={displayName} 
                   onChange={(e) => setDisplayName(e.target.value)}
-                  placeholder="e.g. Satoshi" 
+                  placeholder="Your full name" 
                   className="w-full text-[13px] bg-[#FAFBFC] border border-[rgba(0,0,0,0.08)] rounded-xl px-4 py-2.5 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-400 transition"
                 />
               </div>
@@ -152,7 +250,7 @@ export default function SettingsManager({
                   type="tel" 
                   value={phoneNumber} 
                   onChange={(e) => setPhoneNumber(e.target.value)}
-                  placeholder="+1234..." 
+                  placeholder="+1234567890" 
                   className="w-full text-[13px] bg-[#FAFBFC] border border-[rgba(0,0,0,0.08)] rounded-xl px-4 py-2.5 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-400 transition"
                 />
               </div>
@@ -176,11 +274,22 @@ export default function SettingsManager({
                 disabled={savingProfile || saving}
                 type="submit" 
                 className={`w-full text-white text-[13px] font-bold py-3 rounded-xl transition disabled:opacity-50 shadow-sm flex items-center justify-center gap-2 ${
-                  saveStatus === 'success' ? 'bg-green-500 hover:bg-green-600' : 'bg-[#1E293B] hover:bg-black'
+                  saveStatus === 'success' ? 'bg-green-500' : saveStatus === 'error' ? 'bg-red-500' : 'bg-[#1E293B] hover:bg-black'
                 }`}
               >
-                 {savingProfile ? 'Syncing...' : saveStatus === 'success' ? 'Profile Synced! ✅' : 'Update & Sync Profile'}
+                 {savingProfile ? (
+                   <><Loader2 className="w-4 h-4 animate-spin" /> Saving to Database...</>
+                 ) : saveStatus === 'success' ? (
+                   <><CheckCircle className="w-4 h-4" /> Saved & Synced ✓</>
+                 ) : saveStatus === 'error' ? (
+                   <><XCircle className="w-4 h-4" /> Save Failed — Try Again</>
+                 ) : (
+                   'Save to Database & Sync'
+                 )}
               </button>
+              <p className="text-[10px] text-[#94A3B8] mt-2 text-center">
+                Your name, number, and handle are stored permanently in the database.
+              </p>
            </div>
         </form>
       </div>
@@ -246,61 +355,71 @@ export default function SettingsManager({
         </div>
       </div>
 
-      {/* Integrations (Linked to Data) */}
+      {/* Bot Integrations — Real Status */}
       <div className="glass-card rounded-2xl p-6 card-glow">
         <div className="flex items-center gap-3 mb-5">
           <div className="w-8 h-8 rounded-lg bg-green-50 border border-green-100 flex items-center justify-center">
             <Globe className="w-4 h-4 text-green-500" />
           </div>
           <h2 className="text-[15px] font-semibold text-[#1E293B]">Bot Integrations</h2>
+          <span className="ml-auto text-[9px] font-bold uppercase tracking-wider text-[#94A3B8]">
+            Real-time Status
+          </span>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-          {[
-            { 
-              name: 'WhatsApp Bot', 
-              id: 'whatsappInput',
-              desc: 'Audit via WhatsApp messenger', 
-              connected: !!phoneNumber, 
-              icon: MessageSquare,
-              color: 'text-green-500',
-              bg: 'bg-green-50'
-            },
-            { 
-              name: 'Telegram Bot', 
-              id: 'telegramInput',
-              desc: 'Audit via Telegram messenger', 
-              connected: !!telegramHandle, 
-              icon: Globe,
-              color: 'text-blue-500',
-              bg: 'bg-blue-50'
-            },
-          ].map((item, i) => (
-            <div key={i} className="p-4 rounded-xl border border-[rgba(0,0,0,0.04)] bg-[#FAFBFC] flex items-center justify-between">
+          {/* WhatsApp */}
+          <div className="p-4 rounded-xl border border-[rgba(0,0,0,0.04)] bg-[#FAFBFC]">
+            <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-lg ${item.bg} flex items-center justify-center`}>
-                  <item.icon className={`w-5 h-5 ${item.color}`} />
+                <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center">
+                  <MessageSquare className="w-5 h-5 text-green-500" />
                 </div>
                 <div>
-                  <p className="text-[13px] font-bold text-[#1E293B]">{item.name}</p>
-                  <p className="text-[11px] text-[#64748B]">{item.desc}</p>
+                  <p className="text-[13px] font-bold text-[#1E293B]">WhatsApp Bot</p>
+                  <p className="text-[11px] text-[#64748B]">via Twilio</p>
                 </div>
               </div>
-              {item.connected ? (
-                <span className="text-[9px] font-black uppercase tracking-tighter px-2 py-0.5 rounded bg-green-500 text-white shadow-sm flex items-center gap-1">
-                   <span className="w-1 h-1 rounded-full bg-white pulse-dot" />
-                   Live
-                </span>
-              ) : (
-                <button 
-                  onClick={() => scrollToField(item.id)}
-                  className="text-[9px] font-bold uppercase tracking-tighter px-2 py-1 rounded bg-white hover:bg-black border border-[rgba(0,0,0,0.08)] hover:text-white transition shadow-sm"
-                >
-                  Link
-                </button>
-              )}
+              {renderStatusBadge(getWhatsAppStatus())}
             </div>
-          ))}
+            <div className="text-[10px] text-[#94A3B8] space-y-1 border-t border-[rgba(0,0,0,0.04)] pt-3">
+              <p>• Bot Token: {integrationStatus?.whatsapp?.configured ? '✅ Configured' : '❌ Not set in environment'}</p>
+              <p>• Your Number: {phoneNumber ? `✅ ${phoneNumber}` : '⚠️ Not provided'}</p>
+            </div>
+          </div>
+          
+          {/* Telegram */}
+          <div className="p-4 rounded-xl border border-[rgba(0,0,0,0.04)] bg-[#FAFBFC]">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
+                  <Globe className="w-5 h-5 text-blue-500" />
+                </div>
+                <div>
+                  <p className="text-[13px] font-bold text-[#1E293B]">Telegram Bot</p>
+                  <p className="text-[11px] text-[#64748B]">
+                    {integrationStatus?.telegram?.botUsername ? `@${integrationStatus.telegram.botUsername}` : 'Bot API'}
+                  </p>
+                </div>
+              </div>
+              {renderStatusBadge(getTelegramStatus())}
+            </div>
+            <div className="text-[10px] text-[#94A3B8] space-y-1 border-t border-[rgba(0,0,0,0.04)] pt-3">
+              <p>• Bot Token: {integrationStatus?.telegram?.configured ? '✅ Configured' : '❌ Not set in environment'}</p>
+              <p>• Your Handle: {telegramHandle ? `✅ @${telegramHandle}` : '⚠️ Not provided'}</p>
+            </div>
+          </div>
         </div>
+        
+        {/* Setup instructions if not configured */}
+        {integrationStatus && (!integrationStatus.telegram.configured || !integrationStatus.whatsapp.configured) && (
+          <div className="mt-4 p-3 bg-amber-50/50 rounded-lg border border-amber-100/50">
+            <p className="text-[11px] text-amber-700 font-semibold mb-1">⚠️ Setup Required</p>
+            <p className="text-[10px] text-amber-600">
+              Bot tokens must be added to your server environment variables to enable real messaging. 
+              Set <code className="bg-amber-100 px-1 rounded">TELEGRAM_BOT_TOKEN</code> and <code className="bg-amber-100 px-1 rounded">TWILIO_ACCOUNT_SID</code> in your Vercel project settings.
+            </p>
+          </div>
+        )}
       </div>
     </>
   );

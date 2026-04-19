@@ -22,12 +22,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
   } catch (error: any) {
     console.error('Firestore error in DashboardLayout:', error);
     // Generic fallback for any database error to prevent total app crash
-    user = { email: session.email, phoneNumber: undefined };
+    user = { email: session.email, phoneNumber: undefined, displayName: undefined };
   }
 
   return (
     <div className="flex h-screen bg-[#F7F8FA] text-[#1E293B] font-sans overflow-hidden w-full">
-      <DashboardSidebar phoneNumber={user?.phoneNumber} />
+      <DashboardSidebar displayName={user?.displayName} phoneNumber={user?.phoneNumber} />
 
       <main className="flex-1 flex flex-col relative overflow-y-auto">
         {/* Mobile Header */}
